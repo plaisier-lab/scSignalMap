@@ -1,3 +1,13 @@
+# Datafiles
+*.rds
+
+# Vim cruft
+*~
+*.swp
+
+# Mac cruft
+.DS_Store
+
 # History files
 .Rhistory
 .Rapp.history
