@@ -113,7 +113,6 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
                     
                     # Row bind the data into the matrix
                     tmp1 = c(lig1, rec1, clust1, clust2, counts[[clust1]][lig1], perc_gte3[[clust1]][lig1], perc_gte10[[clust1]][lig1], perc_gt0[[clust1]][lig1], avg_exp[[clust1]][lig1], ligMarker, NA, counts[[clust2]][rec1], perc_gte3[[clust2]][rec1], perc_gte10[[clust2]][rec1], perc_gt0[[clust2]][rec1], avg_exp[[clust2]][rec1], recMarker, NA)
-                    #print(tmp1)
                     pairs_data = rbind(pairs_data, tmp1)
                 }
             }
