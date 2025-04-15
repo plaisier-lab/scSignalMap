@@ -24,7 +24,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     lr_pairs = na.omit(lr_network[,c(paste('ligand',species,gene_id,sep='_'),paste('receptor',species,gene_id,sep='_'))])
 
     # Load up secreted ligands
-    secreted = read.csv(system.file('extdata', 'secreted.csv', package='scSignalMap'), header=TRUE)
+    #secreted = read.csv(system.file('extdata', 'secreted.csv', package='scSignalMap'), header=TRUE)
     
 
     ## Step 2. Identify marker genes
