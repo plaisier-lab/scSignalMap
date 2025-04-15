@@ -39,7 +39,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     cat('  Precomputing...\n')
     
     # Get a vector of marker genes   
-    allgenes = rownames(seurat1@assays$RNA)[which(rowSums(seurat1@assays$RNA$counts)>0)]
+    allgenes = rownames(seurat1@assays$RNA)[which(rowSums(as.matrix(seurat1@assays$RNA$counts))>0)]
 
     # Prepare lists to hold precomputed data
     counts = list()
