@@ -13,8 +13,6 @@
 #' @export
 MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_adj_lte = 0.05, min_pct = 0.1, species='human', gene_id='ensembl') {
     cat('Running scSignalMap:\n')
-    # Make a copy of object
-    seurat1 = seurat_obj
 
     ## Step 1. Load up the data
 
@@ -39,7 +37,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     cat('  Precomputing...\n')
     
     # Get a vector of marker genes   
-    allgenes = rownames(seurat1@assays$RNA)[which(rowSums(as.matrix(seurat1@assays$RNA$counts))>0)]
+    allgenes = rownames(seurat_obj@assays$RNA)[which(rowSums(as.matrix(seurat_obj@assays$RNA$counts))>0)]
 
     # Prepare lists to hold precomputed data
     counts = list()
@@ -49,38 +47,33 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     avg_exp = list()
 
     # Split up the seurat object by groups
-    seurat1_split = SplitObject(seurat1, split.by=group_by)
+    seurat_obj_split = SplitObject(seurat_obj, split.by=group_by)
 
     # Iterate through each cluster
-    for(clust1 in sort(unique(seurat1@meta.data[,group_by]))) {
+    for(clust1 in sort(unique(seurat_obj@meta.data[,group_by]))) {
         cat(paste0('    ',clust1,'\n'))
         # Precompute counts per cluster
-        counts[[clust1]] = rowSums(as.matrix(seurat1_split[[clust1]]@assays$RNA@layers$counts))
-        cat(paste0('    a\n'))
+        counts[[clust1]] = rowSums(as.matrix(seurat_obj_split[[clust1]]@assays$RNA@layers$counts))
         
         # Precompute percentage of cells with at least 1 transcript per cluster
-        rowSums_gt0 = rowSums(as.matrix(seurat1_split[[clust1]]@assays$RNA@layers$counts)>0)/ncol(seurat1_split[[clust1]])
-        names(rowSums_gt0) = rownames(seurat1_split[[clust1]]@assays$RNA)
+        rowSums_gt0 = rowSums(as.matrix(seurat_obj_split[[clust1]]@assays$RNA@layers$counts)>0)/ncol(seurat_obj_split[[clust1]])
+        names(rowSums_gt0) = rownames(seurat_obj_split[[clust1]]@assays$RNA)
         perc_gt0[[clust1]] = rowSums_gt0
-        cat(paste0('    b\n'))
 
         # Precompute number of cells with at least 3 transcript per cluster
-        rowSums_gte3 = rowSums(as.matrix(seurat1_split[[clust1]]@assays$RNA@layers$counts)>=3)/ncol(seurat1_split[[clust1]])
-        names(rowSums_gte3) = rownames(seurat1_split[[clust1]]@assays$RNA)
+        rowSums_gte3 = rowSums(as.matrix(seurat_obj_split[[clust1]]@assays$RNA@layers$counts)>=3)/ncol(seurat_obj_split[[clust1]])
+        names(rowSums_gte3) = rownames(seurat_obj_split[[clust1]]@assays$RNA)
         perc_gte3[[clust1]] = rowSums_gte3
-        cat(paste0('    c\n'))
         
         # Precompute number of cells with at least 3 transcript per cluster
-        rowSums_gte10 = rowSums(as.matrix(seurat1_split[[clust1]]@assays$RNA@layers$counts)>=10)/ncol(seurat1_split[[clust1]])
-        names(rowSums_gte10) = rownames(seurat1_split[[clust1]]@assays$RNA)
+        rowSums_gte10 = rowSums(as.matrix(seurat_obj_split[[clust1]]@assays$RNA@layers$counts)>=10)/ncol(seurat_obj_split[[clust1]])
+        names(rowSums_gte10) = rownames(seurat_obj_split[[clust1]]@assays$RNA)
         perc_gte10[[clust1]] = rowSums_gte3
-        cat(paste0('    d\n'))
         
         # Precompute average expression per cluster
-        avg_clust1 = rowMeans(as.matrix(seurat1_split[[clust1]]@assays$RNA@layers$counts))
-        names(avg_clust1) = rownames(seurat1_split[[clust1]]@assays$RNA)
+        avg_clust1 = rowMeans(as.matrix(seurat_obj_split[[clust1]]@assays$RNA@layers$counts))
+        names(avg_clust1) = rownames(seurat_obj_split[[clust1]]@assays$RNA)
         avg_exp[[clust1]] = avg_clust1
-        cat(paste0('    e\n'))
     }
 
 
@@ -101,10 +94,10 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
             cat(paste0('    ',lig1,'->',rec1,'\n'))
             
             # Iterate through sender cell types
-            for(clust1 in sort(unique(seurat1@meta.data[,group_by]))) {
+            for(clust1 in sort(unique(seurat_obj@meta.data[,group_by]))) {
                 
                 # Iterate through reciever cell types
-                for(clust2 in sort(unique(seurat1@meta.data[,group_by]))) {
+                for(clust2 in sort(unique(seurat_obj@meta.data[,group_by]))) {
                     
                     # Add marker gene information
                     if(lig1 %in% markers[[clust1]]) {
