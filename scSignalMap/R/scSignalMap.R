@@ -55,25 +55,25 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     for(clust1 in sort(unique(seurat1@meta.data[,group_by]))) {
         cat(paste0('    ',clust1,'\n'))
         # Precompute counts per cluster
-        counts[[clust1]] = rowSums(seurat1_split[[clust1]]@assays$RNA)
+        counts[[clust1]] = rowSums(as.matrix(seurat1_split[[clust1]]@assays$RNA))
         
         # Precompute percentage of cells with at least 1 transcript per cluster
-        rowSums_gt0 = rowSums(seurat1_split[[clust1]]@assays$RNA@layers$counts>0)/ncol(seurat1_split[[clust1]])
+        rowSums_gt0 = rowSums(as.matrix(seurat1_split[[clust1]]@assays$RNA@layers$counts)>0)/ncol(seurat1_split[[clust1]])
         names(rowSums_gt0) = rownames(seurat1_split[[clust1]]@assays$RNA)
         perc_gt0[[clust1]] = rowSums_gt0
 
         # Precompute number of cells with at least 3 transcript per cluster
-        rowSums_gte3 = rowSums(seurat1_split[[clust1]]@assays$RNA@layers$counts>=3)/ncol(seurat1_split[[clust1]])
+        rowSums_gte3 = rowSums(as.matrix(seurat1_split[[clust1]]@assays$RNA@layers$counts)>=3)/ncol(seurat1_split[[clust1]])
         names(rowSums_gte3) = rownames(seurat1_split[[clust1]]@assays$RNA)
         perc_gte3[[clust1]] = rowSums_gte3
         
         # Precompute number of cells with at least 3 transcript per cluster
-        rowSums_gte10 = rowSums(seurat1_split[[clust1]]@assays$RNA@layers$counts>=10)/ncol(seurat1_split[[clust1]])
+        rowSums_gte10 = rowSums(as.matrix(seurat1_split[[clust1]]@assays$RNA@layers$counts)>=10)/ncol(seurat1_split[[clust1]])
         names(rowSums_gte10) = rownames(seurat1_split[[clust1]]@assays$RNA)
         perc_gte10[[clust1]] = rowSums_gte3
         
         # Precompute average expression per cluster
-        avg_clust1 = rowMeans(seurat1_split[[clust1]]@assays$RNA@layers$counts)
+        avg_clust1 = rowMeans(as.matrix(seurat1_split[[clust1]]@assays$RNA@layers$counts))
         names(avg_clust1) = rownames(seurat1_split[[clust1]]@assays$RNA)
         avg_exp[[clust1]] = avg_clust1
     }
