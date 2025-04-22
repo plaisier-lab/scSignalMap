@@ -114,7 +114,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
                     }
  
                     # Add if ligand is secreted
-                    if(lig1 %in% secreted) {
+                    if(lig1 %in% secreted_ligands) {
                         ligSec = TRUE
                     } else {
                         ligSec = FALSE
