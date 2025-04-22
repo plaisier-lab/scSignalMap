@@ -22,8 +22,8 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     lr_pairs = na.omit(lr_network[,c(paste('ligand',species,gene_id,sep='_'),paste('receptor',species,gene_id,sep='_'))])
 
     # Load up secreted ligands
-    #secreted = read.csv(system.file('extdata', 'secreted.csv', package='scSignalMap'), header=TRUE)
-    
+    secreted = read.csv(system.file('extdata', 'secreted.csv', package='scSignalMap'), header=TRUE)
+    secreted_ligands = na.omit(secreted[,paste(species,gene_id,sep='_')])
 
     ## Step 2. Identify marker genes
     putative_markers = FindAllMarkers(seurat_obj, group.by=group_by, min.pct=min_pct)
@@ -112,9 +112,16 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
                     } else {
                         recMarker = FALSE
                     }
-                    
+ 
+                    # Add if ligand is secreted
+                    if(lig1 %in% secreted) {
+                        ligSec = TRUE
+                    } else {
+                        ligSec = FALSE
+                    }
+
                     # Row bind the data into the matrix
-                    tmp1 = c(lig1, rec1, clust1, clust2, counts[[clust1]][lig1], perc_gte3[[clust1]][lig1], perc_gte10[[clust1]][lig1], perc_gt0[[clust1]][lig1], avg_exp[[clust1]][lig1], ligMarker, NA, counts[[clust2]][rec1], perc_gte3[[clust2]][rec1], perc_gte10[[clust2]][rec1], perc_gt0[[clust2]][rec1], avg_exp[[clust2]][rec1], recMarker, NA)
+                    tmp1 = c(lig1, rec1, clust1, clust2, counts[[clust1]][lig1], perc_gte3[[clust1]][lig1], perc_gte10[[clust1]][lig1], perc_gt0[[clust1]][lig1], avg_exp[[clust1]][lig1], ligMarker, ligSec, counts[[clust2]][rec1], perc_gte3[[clust2]][rec1], perc_gte10[[clust2]][rec1], perc_gt0[[clust2]][rec1], avg_exp[[clust2]][rec1], recMarker)
                     pairs_data = rbind(pairs_data, tmp1)
                 }
             }
