@@ -53,7 +53,9 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     for(clust1 in sort(unique(seurat_obj@meta.data[,group_by]))) {
         cat(paste0('    ',clust1,'\n'))
         # Precompute counts per cluster
-        counts[[clust1]] = rowSums(as.matrix(seurat_obj_split[[clust1]]@assays$RNA@layers$counts))
+        cnts = rowSums(as.matrix(seurat_obj_split[[clust1]]@assays$RNA@layers$counts))
+        names(cnts) = rownames(seurat_obj_split[[clust1]]@assays$RNA)
+        counts[[clust1]] = cnts
         
         # Precompute percentage of cells with at least 1 transcript per cluster
         rowSums_gt0 = rowSums(as.matrix(seurat_obj_split[[clust1]]@assays$RNA@layers$counts)>0)/ncol(seurat_obj_split[[clust1]])
