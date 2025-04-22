@@ -12,7 +12,7 @@ setwd('/files/test')
 seurat_obj = readRDS('Q1_normalized_ensembl.rds')
 
 interactions1 = MapInteractions(seurat_obj, 'seurat_clusters')
-
+write.csv(interactions1, 'Q1_norm_ens_scSignalMap.csv')
 
 
 #group_by = 'seurat_clusters'
