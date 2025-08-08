@@ -76,7 +76,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
         # Precompute number of cells with at least 3 transcript per cluster
         rowSums_gte10 = rowSums(as.matrix(seurat_obj_split[[clust1]]@assays$RNA@layers$counts)>=10)/ncol(seurat_obj_split[[clust1]])
         names(rowSums_gte10) = rownames(seurat_obj_split[[clust1]]@assays$RNA)
-        perc_gte10[[clust1]] = rowSums_gte3
+        perc_gte10[[clust1]] = rowSums_gte10
         
         # Precompute average expression per cluster
         avg_clust1 = rowMeans(as.matrix(seurat_obj_split[[clust1]]@assays$RNA@layers$counts))
