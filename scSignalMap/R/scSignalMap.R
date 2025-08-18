@@ -106,6 +106,8 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     ligSec = FALSE
     recMarker = FALSE
     # Iterate through ligand receptor pairs
+    i = 1
+    pairs_data = list()
     for(pair1 in 1:nrow(lr_pairs)) {
         lig1 = lr_pairs[pair1,1]
         rec1 = lr_pairs[pair1,2]
@@ -132,12 +134,12 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
 
                 # Row bind the data into the matrix
                 tmp2 = c(tmp1, clust2, counts[[clust2]][rec1], perc_gte3[[clust2]][rec1], perc_gte10[[clust2]][rec1], perc_gt0[[clust2]][rec1], avg_exp[[clust2]][rec1], recMarker)
-                pairs_data = rbind(pairs_data, tmp2)
+                pairs_data[[i]] = tmp2
             }
         }
     }
 
     cat('Done\n')
-    return(data.frame(pairs_data))
+    return(do.call(rbind, pairs_data))
 }
 
