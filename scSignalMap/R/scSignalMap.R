@@ -31,13 +31,17 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     secreted = read.csv(system.file('extdata', 'secreted.csv', package='scSignalMap'), header=TRUE)
     secreted_ligands = na.omit(secreted[,paste(species,gene_id,sep='_')])
 
+
     ## Step 2. Identify marker genes
+    cat('  Identifying marker genes...\n')
+    
     putative_markers = FindAllMarkers(seurat_obj, group.by=group_by, min.pct=min_pct, verbose=FALSE)
     markers = list()
     for(cluster1 in sort(unique(seurat_obj@meta.data[,group_by]))) {
         markers[[cluster1]] = putative_markers %>% filter(cluster==cluster1 & avg_log2FC>=avg_log2FC_gte & p_val_adj<=p_val_adj_lte) %>% pull(name='gene')
         #cat(paste0('    ',cluster1,': ',length(markers[[cluster1]]),'\n'))
     }
+
 
     ## Step 3. Precompute
     cat('  Precomputing...\n')
@@ -91,12 +95,9 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
 
     ## Step 4. Integrate ligand receptor pair with expression data
     
-    cat('  Integrating data..\n')
+    cat('  Integrating data...\n')
     
     
-    ligMarker = FALSE
-    ligSec = FALSE
-    recMarker = FALSE
     # Iterate through ligand receptor pairs
     i = 1
     j = 1
@@ -116,9 +117,9 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
             # Add if ligand is secreted
             #ligSec = lig1 %fin% secreted_ligands
             if(gene_id=='symbol') {
-                tmp1 = c(lig1, rec1, clust1, counts[[clust1]][lig1], perc_gte3[[clust1]][lig1], perc_gte10[[clust1]][lig1], perc_gt0[[clust1]][lig1], avg_exp[[clust1]][lig1], ligMarker, ligSec)
+                tmp1 = c(lig1, rec1, clust1, counts[[clust1]][lig1], perc_gte3[[clust1]][lig1], perc_gte10[[clust1]][lig1], perc_gt0[[clust1]][lig1], avg_exp[[clust1]][lig1], FALSE, FALSE)
             } else {
-                tmp1 = c(lig1, lig_convert[lig1], rec1, rec_convert[rec1], clust1, counts[[clust1]][lig1], perc_gte3[[clust1]][lig1], perc_gte10[[clust1]][lig1], perc_gt0[[clust1]][lig1], avg_exp[[clust1]][lig1], ligMarker, ligSec)
+                tmp1 = c(lig1, lig_convert[lig1], rec1, rec_convert[rec1], clust1, counts[[clust1]][lig1], perc_gte3[[clust1]][lig1], perc_gte10[[clust1]][lig1], perc_gt0[[clust1]][lig1], avg_exp[[clust1]][lig1], FALSE, FALSE)
             }
             
             # Iterate through reciever cell types
@@ -127,7 +128,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
                 #recMarker = rec1 %fin% markers[[clust2]]
 
                 # Row bind the data into the matrix
-                tmp2 = c(tmp1, clust2, counts[[clust2]][rec1], perc_gte3[[clust2]][rec1], perc_gte10[[clust2]][rec1], perc_gt0[[clust2]][rec1], avg_exp[[clust2]][rec1], recMarker)
+                tmp2 = c(tmp1, clust2, counts[[clust2]][rec1], perc_gte3[[clust2]][rec1], perc_gte10[[clust2]][rec1], perc_gt0[[clust2]][rec1], avg_exp[[clust2]][rec1], FALSE)
                 pairs_data[[i]] = tmp2
                 j = j + 1
             }
@@ -136,15 +137,19 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
         i = i + 1
     }
     close(pb)
-    cat('Done\n')
     
     # Prepare a matrix to hold the data
     pairs_data = data.frame(do.call(rbind, pairs_data))
     if(gene_id=='symbol') {
-        colnames(pairs_data) = c('Ligand','Receptor', 'Sender', 'Ligand_Counts', 'Lig_gte_3', 'Lig_gte_10', 'Ligand_Cells_Exp', 'Ligand_Avg_Exp', 'Ligand_Cluster_Marker', 'Lig_secreted', 'Receiver', 'Receptor_Counts', 'Rec_gte_3', 'Rec_gte_10', 'Receptor_Cells_Exp', 'Receptor_Avg_Exp', 'Receptor_Cluster_Marker')
+        colnames(pairs_data) = c('Ligand','Receptor', 'Sender', 'Ligand_Counts', 'Lig_gte_3', 'Lig_gte_10', 'Ligand_Cells_Exp', 'Ligand_Avg_Exp', 'Ligand_Cluster_Marker', 'Ligand_secreted', 'Receiver', 'Receptor_Counts', 'Rec_gte_3', 'Rec_gte_10', 'Receptor_Cells_Exp', 'Receptor_Avg_Exp', 'Receptor_Cluster_Marker')
     } else {
-        colnames(pairs_data) = c('Ligand','Ligand Symbol','Receptor','Receptor Symbol', 'Sender', 'Ligand_Counts', 'Lig_gte_3', 'Lig_gte_10', 'Ligand_Cells_Exp', 'Ligand_Avg_Exp', 'Ligand_Cluster_Marker', 'Lig_secreted', 'Receiver', 'Receptor_Counts', 'Rec_gte_3', 'Rec_gte_10', 'Receptor_Cells_Exp', 'Receptor_Avg_Exp', 'Receptor_Cluster_Marker')
+        colnames(pairs_data) = c('Ligand','Ligand Symbol','Receptor','Receptor Symbol', 'Sender', 'Ligand_Counts', 'Lig_gte_3', 'Lig_gte_10', 'Ligand_Cells_Exp', 'Ligand_Avg_Exp', 'Ligand_Cluster_Marker', 'Ligand_secreted', 'Receiver', 'Receptor_Counts', 'Rec_gte_3', 'Rec_gte_10', 'Receptor_Cells_Exp', 'Receptor_Avg_Exp', 'Receptor_Cluster_Marker')
     }
+    pairs_data[,'Ligand_Cluster_Markter'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,'Ligand'] %fin% markers[[pairs_data[x,'Sender']]]})
+    pairs_data[,'Ligand_secreted'] = pairs_data[,'Ligand'] %fin% secreted_ligands
+    pairs_data[,'Receptor_Cluster_Marker'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,'Receptor'] %fin% markers[[pairs_data[x,'Receiver']]]})
+    cat('Done.\n')
+
     return(pairs_data)
 }
 
