@@ -100,9 +100,8 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     
     # Iterate through ligand receptor pairs
     i = 1
-    j = 1
     pairs_data = list()
-    pb = txtProgressBar(min = 0, max = nrow(lr_pairs), style=3, width=50, char= '=')
+    #pb = txtProgressBar(min = 0, max = nrow(lr_pairs), style=3, width=50, char= '=')
     for(pair1 in 1:nrow(lr_pairs)) {
         lig1 = lr_pairs[pair1,1]
         rec1 = lr_pairs[pair1,2]
@@ -130,13 +129,10 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
                 # Row bind the data into the matrix
                 tmp2 = c(tmp1, clust2, NA, NA, NA, NA, NA, FALSE)
                 pairs_data[[i]] = tmp2
-                j = j + 1
+                i = i + 1
             }
         }
-        setTxtProgressBar(pb, i)
-        i = i + 1
     }
-    close(pb)
     
     # Prepare a matrix to hold the data
     pairs_data = data.frame(do.call(rbind, pairs_data))
@@ -145,19 +141,34 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     } else {
         colnames(pairs_data) = c('Ligand','Ligand Symbol','Receptor','Receptor Symbol', 'Sender', 'Ligand_Counts', 'Lig_gte_3', 'Lig_gte_10', 'Ligand_Cells_Exp', 'Ligand_Avg_Exp', 'Ligand_Cluster_Marker', 'Ligand_secreted', 'Receiver', 'Receptor_Counts', 'Rec_gte_3', 'Rec_gte_10', 'Receptor_Cells_Exp', 'Receptor_Avg_Exp', 'Receptor_Cluster_Marker')
     }
+    pb = txtProgressBar(min = 0, max = 13, style=3, width=50, char= '=')
     pairs_data[,'Ligand_Counts'] = sapply(1:nrow(pairs_data), function(x) { counts[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
-    pairs_data[,'Lig_gte3'] = sapply(1:nrow(pairs_data), function(x) { perc_gte3[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
-    pairs_data[,'Lig_gte10'] = sapply(1:nrow(pairs_data), function(x) { perc_gte10[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
+    setTxtProgressBar(pb, 1)
+    pairs_data[,'Lig_gte_3'] = sapply(1:nrow(pairs_data), function(x) { perc_gte3[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
+    setTxtProgressBar(pb, 2)
+    pairs_data[,'Lig_gte_10'] = sapply(1:nrow(pairs_data), function(x) { perc_gte10[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
+    setTxtProgressBar(pb, 3)
     pairs_data[,'Ligand_Cells_Exp'] = sapply(1:nrow(pairs_data), function(x) { perc_gt0[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
+    setTxtProgressBar(pb, 4)
     pairs_data[,'Ligand_Avg_Exp'] = sapply(1:nrow(pairs_data), function(x) { avg_exp[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
+    setTxtProgressBar(pb, 5)
     pairs_data[,'Ligand_Cluster_Markter'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,'Ligand'] %fin% markers[[pairs_data[x,'Sender']]]})
+    setTxtProgressBar(pb, 6)
     pairs_data[,'Ligand_secreted'] = pairs_data[,'Ligand'] %fin% secreted_ligands
+    setTxtProgressBar(pb, 7)
     pairs_data[,'Receptor_Counts'] = sapply(1:nrow(pairs_data), function(x) { counts[[pairs_data[x,'Receiver']]][pairs_data[x,'Receptor']] })
-    pairs_data[,'Rec_gte3'] = sapply(1:nrow(pairs_data), function(x) { perc_gte3[[pairs_data[x,'Receiver']]][pairs_data[x,'Receptor']] })
-    pairs_data[,'Rec_gte10'] = sapply(1:nrow(pairs_data), function(x) { perc_gte10[[pairs_data[x,'Receiver']]][pairs_data[x,'Receptor']] })
+    setTxtProgressBar(pb, 8)
+    pairs_data[,'Rec_gte_3'] = sapply(1:nrow(pairs_data), function(x) { perc_gte3[[pairs_data[x,'Receiver']]][pairs_data[x,'Receptor']] })
+    setTxtProgressBar(pb, 9)
+    pairs_data[,'Rec_gte_10'] = sapply(1:nrow(pairs_data), function(x) { perc_gte10[[pairs_data[x,'Receiver']]][pairs_data[x,'Receptor']] })
+    setTxtProgressBar(pb, 10)
     pairs_data[,'Receptor_Cells_Exp'] = sapply(1:nrow(pairs_data), function(x) { perc_gt0[[pairs_data[x,'Receiver']]][pairs_data[x,'Receptor']] })
+    setTxtProgressBar(pb, 11)
     pairs_data[,'Receptor_Avg_Exp'] = sapply(1:nrow(pairs_data), function(x) { avg_exp[[pairs_data[x,'Receiver']]][pairs_data[x,'Receptor']] })
-pairs_data[,'Receptor_Cluster_Marker'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,'Receptor'] %fin% markers[[pairs_data[x,'Receiver']]]})
+    setTxtProgressBar(pb, 12)
+    pairs_data[,'Receptor_Cluster_Marker'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,'Receptor'] %fin% markers[[pairs_data[x,'Receiver']]]})
+    setTxtProgressBar(pb, 13)
+    close(pb)
     cat('Done.\n')
 
     return(pairs_data)
