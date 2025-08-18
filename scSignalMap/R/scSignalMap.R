@@ -46,8 +46,8 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     allgenes = rownames(seurat_obj@assays$RNA)[which(rowSums(as.matrix(seurat_obj@assays$RNA$counts))>0)]
 
     # Subset ligand_receptor list to those in allgenes
-    lr_pairs = lr_pairs[lr_pairs[,1] %in% allgenes,]
-    lr_pairs = lr_pairs[lr_pairs[,2] %in% allgenes,]
+    lr_pairs = lr_pairs[lr_pairs[,1] %fin% allgenes,]
+    lr_pairs = lr_pairs[lr_pairs[,2] %fin% allgenes,]
 
     # Prepare lists to hold precomputed data
     counts = list()
