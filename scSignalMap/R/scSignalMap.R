@@ -121,7 +121,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
                     #recMarker = rec1 %fin% markers[[clust2]]
                     
                     # Add if ligand is secreted
-                    ligSec = lig1 %fin% secreted_ligands
+                    #ligSec = lig1 %fin% secreted_ligands
 
                     # Row bind the data into the matrix
                     if(gene_id=='symbol') {
