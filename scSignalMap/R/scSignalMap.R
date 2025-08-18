@@ -105,7 +105,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
         lig1 = lr_pairs[pair1,1]
         rec1 = lr_pairs[pair1,2]
         # Make sure ligand receptor pair is in expression data
-        if((lig1 fastmatch::%fin% allgenes) && (rec1 fastmatch::%fin% allgenes)) {
+        if((lig1 %fin% allgenes) && (rec1 %fin% allgenes)) {
             cat(paste0('    ',lig1,'->',rec1,'\n'))
             
             # Iterate through sender cell types
