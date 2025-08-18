@@ -95,7 +95,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
 
     ## Step 4. Integrate ligand receptor pair with expression data
     
-    cat('  Choosing pairs...\n')
+    cat('  Integration...\n')
     
     
     # Iterate through ligand receptor pairs
@@ -114,12 +114,13 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
             } else {
                 tmp1 = c(lig1, lig_convert[lig1], rec1, rec_convert[rec1], clust1)
             }
-            
+            tmp2 = c(tmp1, counts[[clust1]][lig1], perc_gte3[[clust1]][lig1], perc_gte10[[clust1]][lig1], perc_gt0[[clust1]][lig1], avg_exp[[clust1]][lig1])
+
             # Iterate through reciever cell types
             for(clust2 in sort(unique(seurat_obj@meta.data[,group_by]))) {
                 # Row bind the data into the matrix
-                tmp2 = c(tmp1, clust2)
-                pairs_data[[i]] = tmp2
+                tmp3 = c(tmp2, clust2, counts[[clust2]][rec1], perc_gte3[[clust2]][rec1], perc_gte10[[clust2]][rec1], perc_gt0[[clust2]][rec1], avg_exp[[clust2]][rec1])
+                pairs_data[[i]] = tmp3
                 i = i + 1
             }
         }
@@ -133,27 +134,6 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
         colnames(pairs_data) = c('Ligand','Ligand_Symbol','Receptor','Receptor_Symbol','Sender','Receiver')
     }
 
-    cat('  Integrating data...\n')
-    t1 = Sys.time()
-    pairs_data[,'Ligand_Counts'] = sapply(1:nrow(pairs_data), function(x) { counts[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
-    t2 = Sys.time()
-    print(paste0('Ligand_counts: ',t2-t1))
-    t1 = Sys.time()
-    pairs_data[,'Lig_gte_3'] = sapply(1:nrow(pairs_data), function(x) { perc_gte3[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
-    t2 = Sys.time()
-    print(paste0('Lig_gte_3: ',t2-t1))
-    t1 = Sys.time()
-    pairs_data[,'Lig_gte_10'] = sapply(1:nrow(pairs_data), function(x) { perc_gte10[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
-    t2 = Sys.time()
-    print(paste0('Lig_gte_10: ',t2-t1))
-    t1 = Sys.time()
-    pairs_data[,'Ligand_Cells_Exp'] = sapply(1:nrow(pairs_data), function(x) { perc_gt0[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
-    t2 = Sys.time()
-    print(paste0('Ligand_Cells_Exp: ',t2-t1))
-    t1 = Sys.time()
-    pairs_data[,'Ligand_Avg_Exp'] = sapply(1:nrow(pairs_data), function(x) { avg_exp[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
-    t2 = Sys.time()
-    print(paste0('Ligand_Avg_Exp: ',t2-t1))
     t1 = Sys.time()
     pairs_data[,'Ligand_Cluster_Markter'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,'Ligand'] %fin% markers[[pairs_data[x,'Sender']]]})
     t2 = Sys.time()
@@ -162,26 +142,6 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     pairs_data[,'Ligand_secreted'] = pairs_data[,'Ligand'] %fin% secreted_ligands
 t2 = Sys.time()
     print(paste0('Ligand_secreted: ',t2-t1))
-    t1 = Sys.time()
-    pairs_data[,'Receptor_Counts'] = sapply(1:nrow(pairs_data), function(x) { counts[[pairs_data[x,'Receiver']]][pairs_data[x,'Receptor']] })
-t2 = Sys.time()
-    print(paste0('Receptor_Counts: ',t2-t1))
-    t1 = Sys.time()
-    pairs_data[,'Rec_gte_3'] = sapply(1:nrow(pairs_data), function(x) { perc_gte3[[pairs_data[x,'Receiver']]][pairs_data[x,'Receptor']] })
-t2 = Sys.time()
-    print(paste0('Rec_gte_3: ',t2-t1))
-    t1 = Sys.time()
-    pairs_data[,'Rec_gte_10'] = sapply(1:nrow(pairs_data), function(x) { perc_gte10[[pairs_data[x,'Receiver']]][pairs_data[x,'Receptor']] })
-t2 = Sys.time()
-    print(paste0('Rec_gte_10: ',t2-t1))
-    t1 = Sys.time()
-    pairs_data[,'Receptor_Cells_Exp'] = sapply(1:nrow(pairs_data), function(x) { perc_gt0[[pairs_data[x,'Receiver']]][pairs_data[x,'Receptor']] })
-t2 = Sys.time()
-    print(paste0('Receptor_Cells_Exp: ',t2-t1))
-    t1 = Sys.time()
-    pairs_data[,'Receptor_Avg_Exp'] = sapply(1:nrow(pairs_data), function(x) { avg_exp[[pairs_data[x,'Receiver']]][pairs_data[x,'Receptor']] })
-t2 = Sys.time()
-    print(paste0('Receptor_Avg_Exp: ',t2-t1))
     t1 = Sys.time()
     pairs_data[,'Receptor_Cluster_Marker'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,'Receptor'] %fin% markers[[pairs_data[x,'Receiver']]]})
 t2 = Sys.time()
