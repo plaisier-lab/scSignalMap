@@ -109,11 +109,6 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
         
         # Iterate through sender cell types
         for(clust1 in sort(unique(seurat_obj@meta.data[,group_by]))) {
-            # Add if ligand is DEG
-            #ligMarker = lig1 %fin% markers[[clust1]]
-            
-            # Add if ligand is secreted
-            #ligSec = lig1 %fin% secreted_ligands
             if(gene_id=='symbol') {
                 tmp1 = c(lig1, rec1, clust1)
             } else {
@@ -122,9 +117,6 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
             
             # Iterate through reciever cell types
             for(clust2 in sort(unique(seurat_obj@meta.data[,group_by]))) {
-                # Add if receptor is DEG
-                #recMarker = rec1 %fin% markers[[clust2]]
-
                 # Row bind the data into the matrix
                 tmp2 = c(tmp1, clust2)
                 pairs_data[[i]] = tmp2
@@ -138,7 +130,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     if(gene_id=='symbol') {
         colnames(pairs_data) = c('Ligand','Receptor','Sender','Receiver')
     } else {
-        colnames(pairs_data) = c('Ligand','Ligand_Symbol','Receptor','Receptor_Symbol', 'Receiver')
+        colnames(pairs_data) = c('Ligand','Ligand_Symbol','Receptor','Receptor_Symbol','Sender','Receiver')
     }
 
     cat('  Integrating data...\n')
