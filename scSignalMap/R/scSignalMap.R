@@ -137,9 +137,9 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     # Prepare a matrix to hold the data
     pairs_data = data.frame(do.call(rbind, pairs_data))
     if(gene_id=='symbol') {
-        colnames(pairs_data) = c('Ligand','Receptor', 'Sender', 'Receiver')
+        colnames(pairs_data) = c('Ligand','Receptor','Sender','Receiver')
     } else {
-        colnames(pairs_data) = c('Ligand','Ligand Symbol','Receptor', 'Receiver')
+        colnames(pairs_data) = c('Ligand','Ligand_Symbol','Receptor','Receptor_Symbol', 'Receiver')
     }
     pairs_data[,'Ligand_Counts'] = sapply(1:nrow(pairs_data), function(x) { counts[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
     pairs_data[,'Lig_gte_3'] = sapply(1:nrow(pairs_data), function(x) { perc_gte3[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
