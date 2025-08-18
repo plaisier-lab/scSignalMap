@@ -95,13 +95,12 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
 
     ## Step 4. Integrate ligand receptor pair with expression data
     
-    cat('  Integrating data...\n')
+    cat('  Choosing pairs...\n')
     
     
     # Iterate through ligand receptor pairs
     i = 1
     pairs_data = list()
-    #pb = txtProgressBar(min = 0, max = nrow(lr_pairs), style=3, width=50, char= '=')
     for(pair1 in 1:nrow(lr_pairs)) {
         lig1 = lr_pairs[pair1,1]
         rec1 = lr_pairs[pair1,2]
@@ -141,6 +140,9 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     } else {
         colnames(pairs_data) = c('Ligand','Ligand_Symbol','Receptor','Receptor_Symbol', 'Receiver')
     }
+
+    cat('  Integrating data...\n')
+
     pairs_data[,'Ligand_Counts'] = sapply(1:nrow(pairs_data), function(x) { counts[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
     pairs_data[,'Lig_gte_3'] = sapply(1:nrow(pairs_data), function(x) { perc_gte3[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
     pairs_data[,'Lig_gte_10'] = sapply(1:nrow(pairs_data), function(x) { perc_gte10[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
