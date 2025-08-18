@@ -113,7 +113,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
         lig1 = lr_pairs[pair1,1]
         rec1 = lr_pairs[pair1,2]
         # Make sure ligand receptor pair is in expression data
-        cat(paste0('    ',lig1,'->',rec1,'\n'))
+        #cat(paste0('    ',lig1,'->',rec1,'\n'))
         
         # Iterate through sender cell types
         for(clust1 in sort(unique(seurat_obj@meta.data[,group_by]))) {
