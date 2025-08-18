@@ -111,17 +111,17 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
             # Iterate through sender cell types
             for(clust1 in sort(unique(seurat_obj@meta.data[,group_by]))) {
                 # Add if ligand is DEG
-                #ligMarker = lig1 fastmatch::%fin% markers[[clust1]]
+                #ligMarker = lig1 %fin% markers[[clust1]]
                 
                 # Iterate through reciever cell types
                 for(clust2 in sort(unique(seurat_obj@meta.data[,group_by]))) {
                     
                     
                     # Add if receptor is DEG
-                    #recMarker = rec1 fastmatch::%fin% markers[[clust2]]
+                    #recMarker = rec1 %fin% markers[[clust2]]
                     
                     # Add if ligand is secreted
-                    ligSec = lig1 fastmatch::%fin% secreted_ligands
+                    ligSec = lig1 %fin% secreted_ligands
 
                     # Row bind the data into the matrix
                     if(gene_id=='symbol') {
