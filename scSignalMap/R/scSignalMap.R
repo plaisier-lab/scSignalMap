@@ -32,11 +32,11 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     secreted_ligands = na.omit(secreted[,paste(species,gene_id,sep='_')])
 
     ## Step 2. Identify marker genes
-    putative_markers = FindAllMarkers(seurat_obj, group.by=group_by, min.pct=min_pct)
+    putative_markers = FindAllMarkers(seurat_obj, group.by=group_by, min.pct=min_pct, verbose=FALSE)
     markers = list()
     for(cluster1 in sort(unique(seurat_obj@meta.data[,group_by]))) {
         markers[[cluster1]] = putative_markers %>% filter(cluster==cluster1 & avg_log2FC>=avg_log2FC_gte & p_val_adj<=p_val_adj_lte) %>% pull(name='gene')
-        cat(paste0('    ',cluster1,': ',length(markers[[cluster1]]),'\n'))
+        #cat(paste0('    ',cluster1,': ',length(markers[[cluster1]]),'\n'))
     }
 
     ## Step 3. Precompute
@@ -61,7 +61,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
 
     # Iterate through each cluster
     for(clust1 in sort(unique(seurat_obj@meta.data[,group_by]))) {
-        cat(paste0('    ',clust1,'\n'))
+        #cat(paste0('    ',clust1,'\n'))
         # Precompute counts per cluster
         cnts = rowSums(as.matrix(seurat_obj_split[[clust1]]@assays$RNA@layers$counts))
         names(cnts) = rownames(seurat_obj_split[[clust1]]@assays$RNA)
