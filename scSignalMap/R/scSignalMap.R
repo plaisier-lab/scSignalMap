@@ -108,7 +108,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     # Iterate through ligand receptor pairs
     i = 1
     pairs_data = list()
-    pb = txtProgressBar(min = 0, max = nrows(lr_pairs), style=3, width=50, char= '=')
+    pb = txtProgressBar(min = 0, max = nrow(lr_pairs), style=3, width=50, char= '=')
     for(pair1 in 1:nrow(lr_pairs)) {
         lig1 = lr_pairs[pair1,1]
         rec1 = lr_pairs[pair1,2]
