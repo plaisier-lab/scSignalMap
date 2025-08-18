@@ -98,38 +98,30 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
         colnames(pairs_data) = c('Ligand','Ligand Symbol','Receptor','Receptor Symbol', 'Sender', 'Receiver', 'Ligand_Counts', 'Lig_gte_3', 'Lig_gte_10', 'Ligand_Cells_Exp', 'Ligand_Avg_Exp', 'Ligand_Cluster_Marker', 'Lig_secreted', 'Receptor_Counts', 'Rec_gte_3', 'Rec_gte_10', 'Receptor_Cells_Exp', 'Receptor_Avg_Exp', 'Receptor_Cluster_Marker')
     }
 
+    ligMarker = FALSE
+    recMarker = FALSE
     # Iterate through ligand receptor pairs
     for(pair1 in 1:nrow(lr_pairs)) {
         lig1 = lr_pairs[pair1,1]
         rec1 = lr_pairs[pair1,2]
         # Make sure ligand receptor pair is in expression data
-        if((lig1 %in% allgenes) && (rec1 %in% allgenes)) {
+        if((lig1 fastmatch::%fin% allgenes) && (rec1 fastmatch::%fin% allgenes)) {
             cat(paste0('    ',lig1,'->',rec1,'\n'))
             
             # Iterate through sender cell types
             for(clust1 in sort(unique(seurat_obj@meta.data[,group_by]))) {
+                # Add if ligand is DEG
+                #ligMarker = lig1 fastmatch::%fin% markers[[clust1]]
                 
                 # Iterate through reciever cell types
                 for(clust2 in sort(unique(seurat_obj@meta.data[,group_by]))) {
                     
-                    # Add marker gene information
-                    if(lig1 %in% markers[[clust1]]) {
-                        ligMarker = TRUE
-                    } else {
-                        ligMarker = FALSE
-                    }
-                    if(rec1 %in% markers[[clust2]]) {
-                        recMarker = TRUE
-                    } else {
-                        recMarker = FALSE
-                    }
- 
+                    
+                    # Add if receptor is DEG
+                    #recMarker = rec1 fastmatch::%fin% markers[[clust2]]
+                    
                     # Add if ligand is secreted
-                    if(lig1 %in% secreted_ligands) {
-                        ligSec = TRUE
-                    } else {
-                        ligSec = FALSE
-                    }
+                    ligSec = lig1 fastmatch::%fin% secreted_ligands
 
                     # Row bind the data into the matrix
                     if(gene_id=='symbol') {
