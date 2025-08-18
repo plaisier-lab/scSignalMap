@@ -99,6 +99,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     }
 
     ligMarker = FALSE
+    ligSec = FALSE
     recMarker = FALSE
     # Iterate through ligand receptor pairs
     for(pair1 in 1:nrow(lr_pairs)) {
