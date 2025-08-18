@@ -96,10 +96,10 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     # Prepare a matrix to hold the data
     if(gene_id=='symbol') {
         pairs_data = matrix(nrow=0, ncol=17)
-        colnames(pairs_data) = c('Ligand','Receptor', 'Sender', 'Receiver', 'Ligand_Counts', 'Lig_gte_3', 'Lig_gte_10', 'Ligand_Cells_Exp', 'Ligand_Avg_Exp', 'Ligand_Cluster_Marker', 'Lig_secreted', 'Receptor_Counts', 'Rec_gte_3', 'Rec_gte_10', 'Receptor_Cells_Exp', 'Receptor_Avg_Exp', 'Receptor_Cluster_Marker')
+        colnames(pairs_data) = c('Ligand','Receptor', 'Sender', 'Ligand_Counts', 'Lig_gte_3', 'Lig_gte_10', 'Ligand_Cells_Exp', 'Ligand_Avg_Exp', 'Ligand_Cluster_Marker', 'Lig_secreted', 'Receiver', 'Receptor_Counts', 'Rec_gte_3', 'Rec_gte_10', 'Receptor_Cells_Exp', 'Receptor_Avg_Exp', 'Receptor_Cluster_Marker')
     } else {
         pairs_data = matrix(nrow=0, ncol=19)
-        colnames(pairs_data) = c('Ligand','Ligand Symbol','Receptor','Receptor Symbol', 'Sender', 'Receiver', 'Ligand_Counts', 'Lig_gte_3', 'Lig_gte_10', 'Ligand_Cells_Exp', 'Ligand_Avg_Exp', 'Ligand_Cluster_Marker', 'Lig_secreted', 'Receptor_Counts', 'Rec_gte_3', 'Rec_gte_10', 'Receptor_Cells_Exp', 'Receptor_Avg_Exp', 'Receptor_Cluster_Marker')
+        colnames(pairs_data) = c('Ligand','Ligand Symbol','Receptor','Receptor Symbol', 'Sender', 'Ligand_Counts', 'Lig_gte_3', 'Lig_gte_10', 'Ligand_Cells_Exp', 'Ligand_Avg_Exp', 'Ligand_Cluster_Marker', 'Lig_secreted', 'Receiver', 'Receptor_Counts', 'Rec_gte_3', 'Rec_gte_10', 'Receptor_Cells_Exp', 'Receptor_Avg_Exp', 'Receptor_Cluster_Marker')
     }
 
     ligMarker = FALSE
@@ -120,9 +120,9 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
             # Add if ligand is secreted
             #ligSec = lig1 %fin% secreted_ligands
             if(gene_id=='symbol') {
-                tmp1 = c(tmp1,lig1, rec1, clust1, clust2, counts[[clust1]][lig1], perc_gte3[[clust1]][lig1], perc_gte10[[clust1]][lig1], perc_gt0[[clust1]][lig1], avg_exp[[clust1]][lig1], ligMarker, ligSec)
+                tmp1 = c(lig1, rec1, clust1, counts[[clust1]][lig1], perc_gte3[[clust1]][lig1], perc_gte10[[clust1]][lig1], perc_gt0[[clust1]][lig1], avg_exp[[clust1]][lig1], ligMarker, ligSec)
             } else {
-                tmp1 = c(lig1, lig_convert[lig1], rec1, rec_convert[rec1], clust1, clust2, counts[[clust1]][lig1], perc_gte3[[clust1]][lig1], perc_gte10[[clust1]][lig1], perc_gt0[[clust1]][lig1], avg_exp[[clust1]][lig1], ligMarker, ligSec)
+                tmp1 = c(lig1, lig_convert[lig1], rec1, rec_convert[rec1], clust1, counts[[clust1]][lig1], perc_gte3[[clust1]][lig1], perc_gte10[[clust1]][lig1], perc_gt0[[clust1]][lig1], avg_exp[[clust1]][lig1], ligMarker, ligSec)
             }
             
             # Iterate through reciever cell types
@@ -131,7 +131,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
                 #recMarker = rec1 %fin% markers[[clust2]]
 
                 # Row bind the data into the matrix
-                tmp2 = c(tmp1, counts[[clust2]][rec1], perc_gte3[[clust2]][rec1], perc_gte10[[clust2]][rec1], perc_gt0[[clust2]][rec1], avg_exp[[clust2]][rec1], recMarker)
+                tmp2 = c(tmp1, clust2, counts[[clust2]][rec1], perc_gte3[[clust2]][rec1], perc_gte10[[clust2]][rec1], perc_gt0[[clust2]][rec1], avg_exp[[clust2]][rec1], recMarker)
                 pairs_data = rbind(pairs_data, tmp2)
             }
         }
