@@ -45,6 +45,10 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     # Get a vector of marker genes   
     allgenes = rownames(seurat_obj@assays$RNA)[which(rowSums(as.matrix(seurat_obj@assays$RNA$counts))>0)]
 
+    # Subset ligand_receptor list to those in allgenes
+    lr_pairs = lr_pairs[lr_pairs[,1] %in% allgenes,]
+    lr_pairs = lr_pairs[lr_pairs[,2] %in% allgenes,]
+
     # Prepare lists to hold precomputed data
     counts = list()
     perc_gt0 = list()
@@ -106,32 +110,29 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
         lig1 = lr_pairs[pair1,1]
         rec1 = lr_pairs[pair1,2]
         # Make sure ligand receptor pair is in expression data
-        if((lig1 %fin% allgenes) && (rec1 %fin% allgenes)) {
-            cat(paste0('    ',lig1,'->',rec1,'\n'))
+        cat(paste0('    ',lig1,'->',rec1,'\n'))
+        
+        # Iterate through sender cell types
+        for(clust1 in sort(unique(seurat_obj@meta.data[,group_by]))) {
+            # Add if ligand is DEG
+            #ligMarker = lig1 %fin% markers[[clust1]]
             
-            # Iterate through sender cell types
-            for(clust1 in sort(unique(seurat_obj@meta.data[,group_by]))) {
-                # Add if ligand is DEG
-                #ligMarker = lig1 %fin% markers[[clust1]]
-                
-                # Iterate through reciever cell types
-                for(clust2 in sort(unique(seurat_obj@meta.data[,group_by]))) {
-                    
-                    
-                    # Add if receptor is DEG
-                    #recMarker = rec1 %fin% markers[[clust2]]
-                    
-                    # Add if ligand is secreted
-                    #ligSec = lig1 %fin% secreted_ligands
+            # Add if ligand is secreted
+            #ligSec = lig1 %fin% secreted_ligands
+            if(gene_id=='symbol') {
+                tmp1 = c(tmp1,lig1, rec1, clust1, clust2, counts[[clust1]][lig1], perc_gte3[[clust1]][lig1], perc_gte10[[clust1]][lig1], perc_gt0[[clust1]][lig1], avg_exp[[clust1]][lig1], ligMarker, ligSec)
+            } else {
+                tmp1 = c(lig1, lig_convert[lig1], rec1, rec_convert[rec1], clust1, clust2, counts[[clust1]][lig1], perc_gte3[[clust1]][lig1], perc_gte10[[clust1]][lig1], perc_gt0[[clust1]][lig1], avg_exp[[clust1]][lig1], ligMarker, ligSec)
+            }
+            
+            # Iterate through reciever cell types
+            for(clust2 in sort(unique(seurat_obj@meta.data[,group_by]))) {
+                # Add if receptor is DEG
+                #recMarker = rec1 %fin% markers[[clust2]]
 
-                    # Row bind the data into the matrix
-                    if(gene_id=='symbol') {
-                        tmp1 = c(lig1, rec1, clust1, clust2, counts[[clust1]][lig1], perc_gte3[[clust1]][lig1], perc_gte10[[clust1]][lig1], perc_gt0[[clust1]][lig1], avg_exp[[clust1]][lig1], ligMarker, ligSec, counts[[clust2]][rec1], perc_gte3[[clust2]][rec1], perc_gte10[[clust2]][rec1], perc_gt0[[clust2]][rec1], avg_exp[[clust2]][rec1], recMarker)
-                    } else {
-                        tmp1 = c(lig1, lig_convert[lig1], rec1, rec_convert[rec1], clust1, clust2, counts[[clust1]][lig1], perc_gte3[[clust1]][lig1], perc_gte10[[clust1]][lig1], perc_gt0[[clust1]][lig1], avg_exp[[clust1]][lig1], ligMarker, ligSec, counts[[clust2]][rec1], perc_gte3[[clust2]][rec1], perc_gte10[[clust2]][rec1], perc_gt0[[clust2]][rec1], avg_exp[[clust2]][rec1], recMarker)
-                    }
-                    pairs_data = rbind(pairs_data, tmp1)
-                }
+                # Row bind the data into the matrix
+                tmp2 = c(tmp1, counts[[clust2]][rec1], perc_gte3[[clust2]][rec1], perc_gte10[[clust2]][rec1], perc_gt0[[clust2]][rec1], avg_exp[[clust2]][rec1], recMarker)
+                pairs_data = rbind(pairs_data, tmp2)
             }
         }
     }
