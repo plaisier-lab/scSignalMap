@@ -145,7 +145,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
 
     pairs_data[,'Ligand_Counts'] = sapply(1:nrow(pairs_data), function(x) { counts[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
     pairs_data[,'Lig_gte_3'] = sapply(1:nrow(pairs_data), function(x) { perc_gte3[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
-    pairs_data[,'Lig_gte_10'] = sapply(1:nrow(pairs_data), function(x) { perc_gte10[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
+    pairs_data[,'Lig_gte_10'] = sapply(1:nrow(pairs_data), function(x) { perc_gte10[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
     pairs_data[,'Ligand_Cells_Exp'] = sapply(1:nrow(pairs_data), function(x) { perc_gt0[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
     pairs_data[,'Ligand_Avg_Exp'] = sapply(1:nrow(pairs_data), function(x) { avg_exp[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
     pairs_data[,'Ligand_Cluster_Markter'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,'Ligand'] %fin% markers[[pairs_data[x,'Sender']]]})
