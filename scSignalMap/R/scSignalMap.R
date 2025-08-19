@@ -215,56 +215,29 @@ MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_va
     lr_pairs = lr_pairs[lr_pairs[,1] %fin% allgenes,]
     lr_pairs = lr_pairs[lr_pairs[,2] %fin% allgenes,]
 
-    # Prepare lists to hold precomputed data
-    counts = list()
-    perc_gt0 = list()
-    perc_gte3 = list()
-    perc_gte10 = list()
-    avg_exp = list()
-
     # Split up the seurat object by groups
     seurat_obj_split = SplitObject(seurat_obj, split.by=group_by)
 
-    # Iterate through each cluster
-    for(clust1 in sort(unique(seurat_obj@meta.data[,group_by]))) {
-        #cat(paste0('    ',clust1,'\n'))
-        # Precompute counts per cluster
-        cnts = rowSums(as.matrix(seurat_obj_split[[clust1]]@assays$RNA@layers$counts))
-        names(cnts) = rownames(seurat_obj_split[[clust1]]@assays$RNA)
-        counts[[clust1]] = cnts
-        
-        # Precompute percentage of cells with at least 1 transcript per cluster
-        rowSums_gt0 = rowSums(as.matrix(seurat_obj_split[[clust1]]@assays$RNA@layers$counts)>0)/ncol(seurat_obj_split[[clust1]])
-        names(rowSums_gt0) = rownames(seurat_obj_split[[clust1]]@assays$RNA)
-        perc_gt0[[clust1]] = rowSums_gt0
+    # Build a data.table with statistics
+    all_dt = rbindlist(lapply(sort(unique(seurat_obj@meta.data[, group_by])), function(clust1) {
+                 mat = as.matrix(seurat_obj_split[[clust1]]@assays$RNA@layers$counts)
+                 genes = rownames(seurat_obj_split[[clust1]]@assays$RNA)
+                 n_cells = ncol(mat)
 
-        # Precompute number of cells with at least 3 transcript per cluster
-        rowSums_gte3 = rowSums(as.matrix(seurat_obj_split[[clust1]]@assays$RNA@layers$counts)>=3)/ncol(seurat_obj_split[[clust1]])
-        names(rowSums_gte3) = rownames(seurat_obj_split[[clust1]]@assays$RNA)
-        perc_gte3[[clust1]] = rowSums_gte3
-        
-        # Precompute number of cells with at least 3 transcript per cluster
-        rowSums_gte10 = rowSums(as.matrix(seurat_obj_split[[clust1]]@assays$RNA@layers$counts)>=10)/ncol(seurat_obj_split[[clust1]])
-        names(rowSums_gte10) = rownames(seurat_obj_split[[clust1]]@assays$RNA)
-        perc_gte10[[clust1]] = rowSums_gte10
-        
-        # Precompute average expression per cluster
-        avg_clust1 = rowMeans(as.matrix(seurat_obj_split[[clust1]]@assays$RNA@layers$counts))
-        names(avg_clust1) = rownames(seurat_obj_split[[clust1]]@assays$RNA)
-        avg_exp[[clust1]] = avg_clust1
-    }
+                 data.table(
+                     clust1    = clust1,
+                     gene      = genes,
+                     counts    = rowSums(mat),
+                     perc_gt_0  = rowSums(mat > 0)  / n_cells,
+                     perc_gte_3 = rowSums(mat >= 3) / n_cells,
+                     perc_gte_10= rowSums(mat >= 10)/ n_cells,
+                     avg_exp   = rowMeans(mat)
+                 )
+             }), use.names = TRUE)
 
-    # Make data.tables for fast indexing
-    counts_dt = rbindlist(lapply(names(counts), function(cluster) { data.table(Cluster = cluster, Gene = names(counts[[cluster]]), Value  = counts[[cluster]]) }))
-    setkey(counts_dt, Cluster, Gene)
-    rowSums_gt0_dt = rbindlist(lapply(names(rowSums_gt0), function(cluster) { data.table(Cluster = cluster, Gene = names(rowSums_gt0[[cluster]]), Value  = rowSums_gt0[[cluster]]) }))
-    setkey(rowSums_gt0_dt, Cluster, Gene)
-    rowSums_gte3_dt = rbindlist(lapply(names(rowSums_gte3), function(cluster) { data.table(Cluster = cluster, Gene = names(rowSums_gte3[[cluster]]), Value  = rowSums_gte3[[cluster]]) }))
-    setkey(rowSums_gte3_dt, Cluster, Gene)
-    rowSums_gte10_dt = rbindlist(lapply(names(rowSums_gte10), function(cluster) { data.table(Cluster = cluster, Gene = names(rowSums_gte10[[cluster]]), Value  = rowSums_gte10[[cluster]]) }))
-    setkey(rowSums_gte10_dt, Cluster, Gene)
-    avg_exp_dt = rbindlist(lapply(names(avg_exp), function(cluster) { data.table(Cluster = cluster, Gene = names(avg_exp[[cluster]]), Value  = avg_exp[[cluster]]) }))
-    setkey(avg_exp_dt, Cluster, Gene)
+    # Set key for fast joins/lookups
+    setkey(all_dt, clust1, gene)
+
 
     ## Step 4. Integrate ligand receptor pair with expression data
     
@@ -312,23 +285,23 @@ MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_va
     t0 = proc.time()[3]
     cat('  Integrating data...\n')
     t1 = proc.time()[3]
-    pairs_data[,'Ligand_Counts'] = counts_dt[pairs_data[,c('Sender','Ligand')],'Value']
+    pairs_data[,'Ligand_Counts'] = all_dt[pairs_data[,c('Sender','Ligand')],'counts']
     t2 = proc.time()[3]
     print(paste0('Ligand_counts: ',t2-t1))
     t1 = proc.time()[3]
-    pairs_data[,'Lig_gte_3'] = perc_gte3_dt[pairs_data[,c('Sender','Ligand')],'Value']
+    pairs_data[,'Lig_gte_3'] = all_dt[pairs_data[,c('Sender','Ligand')],'perc_gte_3']
     t2 = proc.time()[3]
     print(paste0('Lig_gte_3: ',t2-t1))
     t1 = proc.time()[3]
-    pairs_data[,'Lig_gte_10'] = perc_gte10_dt[pairs_data[,c('Sender','Ligand')],'Value']
+    pairs_data[,'Lig_gte_10'] = all_dt[pairs_data[,c('Sender','Ligand')],'perc_gte_10']
     t2 = proc.time()[3]
     print(paste0('Lig_gte_10: ',t2-t1))
     t1 = proc.time()[3]
-    pairs_data[,'Ligand_Cells_Exp'] = perc_gt0_dt[pairs_data[,c('Sender','Ligand')],'Value']
+    pairs_data[,'Ligand_Cells_Exp'] = all_dt[pairs_data[,c('Sender','Ligand')],'perc_gt_0']
     t2 = proc.time()[3]
     print(paste0('Ligand_Cells_Exp: ',t2-t1))
     t1 = proc.time()[3]
-    pairs_data[,'Ligand_Avg_Exp'] = avg_exp_dt[pairs_data[,c('Sender','Ligand')],'Value']
+    pairs_data[,'Ligand_Avg_Exp'] = all_dt[pairs_data[,c('Sender','Ligand')],'avg_exp']
     t2 = proc.time()[3]
     print(paste0('Ligand_Avg_Exp: ',t2-t1))
     t1 = proc.time()[3]
@@ -340,23 +313,23 @@ MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_va
     t2 = proc.time()[3]
     print(paste0('Ligand_secreted: ',t2-t1))
     t1 = proc.time()[3]
-    pairs_data[,'Receptor_Counts'] = counts_dt[pairs_data[,c('Receiver','Receptor')],'Value']
+    pairs_data[,'Receptor_Counts'] = all_dt[pairs_data[,c('Receiver','Receptor')],'counts']
     t2 = proc.time()[3]
     print(paste0('Receptor_Counts: ',t2-t1))
     t1 = proc.time()[3]
-    pairs_data[,'Rec_gte_3'] = perc_gte3_dt[pairs_data[,c('Receiver','Receptor')],'Value']
+    pairs_data[,'Rec_gte_3'] = all_dt[pairs_data[,c('Receiver','Receptor')],'perc_gte_3']
     t2 = proc.time()[3]
     print(paste0('Rec_gte_3: ',t2-t1))
     t1 = proc.time()[3]
-    pairs_data[,'Rec_gte_10'] = perc_gte10_dt[pairs_data[,c('Receiver','Receptor')],'Value']
+    pairs_data[,'Rec_gte_10'] = all_dt[pairs_data[,c('Receiver','Receptor')],'perc_gte_10']
     t2 = proc.time()[3]
     print(paste0('Rec_gte_10: ',t2-t1))
     t1 = proc.time()[3]
-    pairs_data[,'Receptor_Cells_Exp'] = perc_gt0_dt[pairs_data[,c('Receiver','Receptor')],'Value']
+    pairs_data[,'Receptor_Cells_Exp'] = all_dt[pairs_data[,c('Receiver','Receptor')],'perc_gt_0']
     t2 = proc.time()[3]
     print(paste0('Receptor_Cells_Exp: ',t2-t1))
     t1 = proc.time()[3]
-    pairs_data[,'Receptor_Avg_Exp'] = avg_exp_dt[pairs_data[,c('Receiver','Receptor')],'Value']
+    pairs_data[,'Receptor_Avg_Exp'] = all_dt[pairs_data[,c('Receiver','Receptor')],'avg_exp']
     t2 = proc.time()[3]
     print(paste0('Receptor_Avg_Exp: ',t2-t1))
     t1 = proc.time()[3]
