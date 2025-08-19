@@ -235,42 +235,33 @@ MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_va
                  )
              }), use.names = TRUE)
 
-    # Set key for fast joins/lookups
-    #setkey(all_dt, clust1, gene)
-
 
     ## Step 4. Integrate ligand receptor pair with expression data
     
     cat('  Choosing pairs...\n')
     
     
-    # Iterate through ligand receptor pairs
-    t0 = proc.time()[3]
-    i = 1
-    pairs_data = list()
-    for(pair1 in 1:nrow(lr_pairs)) {
-        lig1 = lr_pairs[pair1,1]
-        rec1 = lr_pairs[pair1,2]
-        # Make sure ligand receptor pair is in expression data
-        #cat(paste0('    ',lig1,'->',rec1,'\n'))
-        
-        # Iterate through sender cell types
-        for(clust1 in sort(unique(seurat_obj@meta.data[,group_by]))) {
-            if(gene_id=='symbol') {
-                tmp1 = c(lig1, rec1, clust1)
-            } else {
-                tmp1 = c(lig1, lig_convert[lig1], rec1, rec_convert[rec1], clust1)
-            }
+    # All sender/receiver combinations
+    clusts <- sort(unique(seurat_obj@meta.data[[group_by]]))
+    clust_pairs <- CJ(Sender = clusts, Receiver = clusts)  # Cartesian product
 
-            # Iterate through reciever cell types
-            for(clust2 in sort(unique(seurat_obj@meta.data[,group_by]))) {
-                # Row bind the data into the matrix
-                tmp2 = c(tmp1, clust2)
-                pairs_data[[i]] = tmp2
-                i = i + 1
-            }
-        }
-    }
+    # Loop over ligand-receptor pairs once
+    pairs_data <- rbindlist(lapply(1:nrow(lr_pairs), function(idx) {
+      lig1 <- lr_pairs[idx, 1]
+      rec1 <- lr_pairs[idx, 2]
+      
+      if (gene_id == "symbol") {
+        data.table(Ligand = lig1,
+                   Receptor = rec1,
+                   clust_pairs)
+      } else {
+        data.table(Ligand      = lig1,
+                   Ligand_ID   = lig_convert[lig1],
+                   Receptor    = rec1,
+                   Receptor_ID = rec_convert[rec1],
+                   clust_pairs)
+      }
+    })) 
     
     # Prepare a matrix to hold the data
     pairs_data = data.table(do.call(rbind, pairs_data))
@@ -279,69 +270,22 @@ MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_va
     } else {
         colnames(pairs_data) = c('Ligand','Ligand_Symbol','Receptor','Receptor_Symbol','Sender','Receiver')
     }
-    t0_1 = proc.time()[3]
-    print(paste0('Total time: ',t0_1-t0))
 
-    #t0 = proc.time()[3]
     cat('  Integrating data...\n')
-    t1 = proc.time()[3]
     pairs_data[,'Ligand_Counts' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'counts']]
-    t2 = proc.time()[3]
-    print(paste0('Ligand_counts: ',t2-t1))
-    t1 = proc.time()[3]
     pairs_data[,'Lig_gte_3' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gte_3']]
-    t2 = proc.time()[3]
-    print(paste0('Lig_gte_3: ',t2-t1))
-    t1 = proc.time()[3]
     pairs_data[,'Lig_gte_10' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gte_10']]
-    t2 = proc.time()[3]
-    print(paste0('Lig_gte_10: ',t2-t1))
-    t1 = proc.time()[3]
     pairs_data[,'Ligand_Cells_Exp' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gt_0']]
-    t2 = proc.time()[3]
-    print(paste0('Ligand_Cells_Exp: ',t2-t1))
-    t1 = proc.time()[3]
     pairs_data[,'Ligand_Avg_Exp' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'avg_exp']]
-    t2 = proc.time()[3]
-    print(paste0('Ligand_Avg_Exp: ',t2-t1))
-    t1 = proc.time()[3]
     pairs_data[,'Ligand_Cluster_Markter' := mapply(function(sender, ligand) { ligand %in% markers[[sender]] }, Sender, Ligand)]
-    #pairs_data[,'Ligand_Cluster_Markter'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,'Ligand'] %fin% markers[[pairs_data[x,]$Sender]]})
-    t2 = proc.time()[3]
-    print(paste0('Ligand_Cluster_Markter: ',t2-t1))
-    t1 = proc.time()[3]
     pairs_data[,'Ligand_secreted'] = pairs_data[,'Ligand'] %fin% secreted_ligands
-    t2 = proc.time()[3]
-    print(paste0('Ligand_secreted: ',t2-t1))
-    t1 = proc.time()[3]
     pairs_data[,'Receptor_Counts' := all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), 'counts']]
-    t2 = proc.time()[3]
-    print(paste0('Receptor_Counts: ',t2-t1))
-    t1 = proc.time()[3]
     pairs_data[,'Rec_gte_3' := all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), 'perc_gte_3']]
-    t2 = proc.time()[3]
-    print(paste0('Rec_gte_3: ',t2-t1))
-    t1 = proc.time()[3]
     pairs_data[,'Rec_gte_10' := all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), 'perc_gte_10']]
-    t2 = proc.time()[3]
-    print(paste0('Rec_gte_10: ',t2-t1))
-    t1 = proc.time()[3]
     pairs_data[,'Receptor_Cells_Exp' := all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), 'perc_gt_0']]
-    t2 = proc.time()[3]
-    print(paste0('Receptor_Cells_Exp: ',t2-t1))
-    t1 = proc.time()[3]
     pairs_data[,'Receptor_Avg_Exp' := all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), 'avg_exp']]
-    t2 = proc.time()[3]
-    print(paste0('Receptor_Avg_Exp: ',t2-t1))
-    t1 = proc.time()[3]
     pairs_data[,'Receptor_Cluster_Marker' := mapply(function(receiver, receptor) { receptor %in% markers[[receiver]] }, Receiver, Receptor)]
-    #pairs_data[,'Receptor_Cluster_Marker'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,'Receptor'] %fin% markers[[pairs_data[x,'Receiver']]]})
-    t2 = proc.time()[3]
-    print(paste0('Receptor_Cluster_Marker: ',t2-t1))
-    t0_1 = proc.time()[3]
-    print(paste0('Total time: ',t0_1-t0))
     cat('Done.\n')
-
 
     return(pairs_data)
 }
