@@ -305,7 +305,7 @@ MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_va
     t2 = proc.time()[3]
     print(paste0('Ligand_Avg_Exp: ',t2-t1))
     t1 = proc.time()[3]
-    pairs_data[,'Ligand_Cluster_Markter'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,Ligand] %fin% markers[[pairs_data[x,Sender]]]})
+    pairs_data[,'Ligand_Cluster_Markter'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,'Ligand'] %fin% markers[[pairs_data[x,]$Sender]]})
     t2 = proc.time()[3]
     print(paste0('Ligand_Cluster_Markter: ',t2-t1))
     t1 = proc.time()[3]
