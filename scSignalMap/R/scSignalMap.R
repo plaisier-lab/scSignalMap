@@ -257,13 +257,13 @@ MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_va
     # Make data.tables for fast indexing
     counts_dt = rbindlist(lapply(names(counts), function(cluster) { data.table(Cluster = cluster, Gene = names(counts[[cluster]]), Value  = counts[[cluster]]) }))
     setkey(counts_dt, Cluster, Gene)
-    rowSums_gt0_dt = rbindlist(lapply(names(rowSums_gt0), function(cluster) { data.table(Cluster = cluster, Ligand = names(rowSums_gt0[[cluster]]), Value  = rowSums_gt0[[cluster]])
+    rowSums_gt0_dt = rbindlist(lapply(names(rowSums_gt0), function(cluster) { data.table(Cluster = cluster, Ligand = names(rowSums_gt0[[cluster]]), Value  = rowSums_gt0[[cluster]]) }))
     setkey(rowSums_gt0_dt, Cluster, Gene)
-    rowSums_gte3_dt = rbindlist(lapply(names(rowSums_gte3), function(cluster) { data.table(Cluster = cluster, Ligand = names(rowSums_gte3[[cluster]]), Value  = rowSums_gte3[[cluster]])
+    rowSums_gte3_dt = rbindlist(lapply(names(rowSums_gte3), function(cluster) { data.table(Cluster = cluster, Ligand = names(rowSums_gte3[[cluster]]), Value  = rowSums_gte3[[cluster]]) }))
     setkey(rowSums_gte3_dt, Cluster, Gene)
-    rowSums_gte10_dt = rbindlist(lapply(names(rowSums_gte10), function(cluster) { data.table(Cluster = cluster, Ligand = names(rowSums_gte10[[cluster]]), Value  = rowSums_gte10[[cluster]])
+    rowSums_gte10_dt = rbindlist(lapply(names(rowSums_gte10), function(cluster) { data.table(Cluster = cluster, Ligand = names(rowSums_gte10[[cluster]]), Value  = rowSums_gte10[[cluster]]) }))
     setkey(rowSums_gte10_dt, Cluster, Gene)
-    avg_exp_dt = rbindlist(lapply(names(avg_exp), function(cluster) { data.table(Cluster = cluster, Ligand = names(avg_exp[[cluster]]), Value  = avg_exp[[cluster]])
+    avg_exp_dt = rbindlist(lapply(names(avg_exp), function(cluster) { data.table(Cluster = cluster, Ligand = names(avg_exp[[cluster]]), Value  = avg_exp[[cluster]]) }))
     setkey(avg_exp_dt, Cluster, Gene)
 
     ## Step 4. Integrate ligand receptor pair with expression data
