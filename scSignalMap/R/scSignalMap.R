@@ -35,7 +35,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     ## Step 2. Identify marker genes
     cat('  Identifying marker genes...\n')
     
-    putative_markers = FindAllMarkers(seurat_obj, group.by=group_by, min.pct=min_pct, verbose=FALSE)
+    putative_markers = FindAllMarkers(seurat_obj, group.by=group_by, min.pct=min_pct, verbose=T)
     markers = list()
     for(cluster1 in sort(unique(seurat_obj@meta.data[,group_by]))) {
         markers[[cluster1]] = putative_markers %>% filter(cluster==cluster1 & avg_log2FC>=avg_log2FC_gte & p_val_adj<=p_val_adj_lte) %>% pull(name='gene')
@@ -104,7 +104,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     cat(paste0('    Rows = ',nrow(pairs_data),'\n'))
 
     cat('  Integrating data...\n')
-    steps = 12
+    steps = 13
     pb = txtProgressBar(min = 0, max = steps, style = 3)
     i = 0
     pairs_data[,'Ligand_Counts' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'counts']]
