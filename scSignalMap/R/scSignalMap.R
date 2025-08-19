@@ -371,9 +371,3 @@ MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_va
     return(pairs_data)
 }
 
-
-t0 = proc.time()
-mapply(function(sender, ligand) { perc_gt0[[sender]][[ligand]]
-}, pairs_data$Sender, pairs_data$Ligand)
-print(proc.time()-t0)
-
