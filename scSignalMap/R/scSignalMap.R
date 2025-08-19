@@ -263,14 +263,6 @@ MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_va
         }
     })) 
     
-    # Prepare a matrix to hold the data
-    pairs_data = data.table(do.call(rbind, pairs_data))
-    if(gene_id=='symbol') {
-        colnames(pairs_data) = c('Ligand','Receptor','Sender','Receiver')
-    } else {
-        colnames(pairs_data) = c('Ligand','Ligand_Symbol','Receptor','Receptor_Symbol','Sender','Receiver')
-    }
-
     cat('  Integrating data...\n')
     pairs_data[,'Ligand_Counts' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'counts']]
     pairs_data[,'Lig_gte_3' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gte_3']]
