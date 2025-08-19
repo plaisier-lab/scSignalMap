@@ -3,4 +3,3 @@
 import(data.table)
 
 export(MapInteractions)
-export(MapInteractions_vec)
