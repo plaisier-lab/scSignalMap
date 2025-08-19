@@ -238,31 +238,31 @@ MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_va
 
     ## Step 4. Integrate ligand receptor pair with expression data
     
-    cat('  Choosing pairs...\n')
+    cat('   pairs...\n')
     
     
     # All sender/receiver combinations
     clusts = sort(unique(seurat_obj@meta.data[[group_by]]))
     clust_pairs = CJ(Sender = clusts, Receiver = clusts)  # Cartesian product
 
-    # Loop over ligand-receptor pairs once
-    pairs_data = rbindlist(lapply(1:nrow(lr_pairs), function(idx) {
-        lig1 = lr_pairs[idx, 1]
-        rec1 = lr_pairs[idx, 2]
-          
-        if (gene_id == "symbol") {
-            data.table(Ligand   = lig1,
-                       Receptor = rec1,
-                       clust_pairs)
-        } else {
-            data.table(Ligand          = lig1,
-                       Ligand_Symbol   = lig_convert[lig1],
-                       Receptor        = rec1,
-                       Receptor_Symbol = rec_convert[rec1],
-                       clust_pairs)
-        }
-    })) 
-    
+    # Ligand–Receptor pairs table
+    if (gene_id == "symbol") {
+      lr_dt = data.table(
+        Ligand   = lr_pairs[, 1],
+        Receptor = lr_pairs[, 2]
+      )
+    } else {
+      lr_dt = data.table(
+        Ligand          = lr_pairs[, 1],
+        Ligand_Symbol   = lig_convert[lr_pairs[, 1]],
+        Receptor        = lr_pairs[, 2],
+        Receptor_Symbol = rec_convert[lr_pairs[, 2]]
+      )
+    }
+
+    # Cartesian product of LR pairs × cluster pairs
+    pairs_data = lr_dt[, cbind(.SD, clust_dt), by = seq_len(nrow(lr_dt))][, seq_len := NULL]
+
     cat('  Integrating data...\n')
     pairs_data[,'Ligand_Counts' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'counts']]
     pairs_data[,'Lig_gte_3' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gte_3']]
