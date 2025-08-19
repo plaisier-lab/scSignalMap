@@ -99,7 +99,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     
     
     # Iterate through ligand receptor pairs
-    t0 = proc.time()
+    t0 = proc.time()[3]
     i = 1
     j = 1
     pb = txtProgressBar(min = 0, max = nrow(lr_pairs), style=3, width=50, char= '=')
@@ -138,21 +138,21 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     } else {
         colnames(pairs_data) = c('Ligand','Ligand_Symbol','Receptor','Receptor_Symbol','Sender','Receiver')
     }
-    t0_1 = proc.time()
+    t0_1 = proc.time()[3]
     print(paste0('Total time: ',t0_1-t0))
 
 
-    t1 = proc.time()
+    t1 = proc.time()[3]
     pairs_data[,'Ligand_Cluster_Marker'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,'Ligand'] %fin% markers[[pairs_data[x,'Sender']]]})
-    t2 = proc.time()
+    t2 = proc.time()[3]
     print(paste0('Ligand_Cluster_Marker: ',t2-t1))
-    t1 = proc.time()
+    t1 = proc.time()[3]
     pairs_data[,'Ligand_secreted'] = pairs_data[,'Ligand'] %fin% secreted_ligands
-t2 = proc.time()
+t2 = proc.time()[3]
     print(paste0('Ligand_secreted: ',t2-t1))
-    t1 = proc.time()
+    t1 = proc.time()[3]
     pairs_data[,'Receptor_Cluster_Marker'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,'Receptor'] %fin% markers[[pairs_data[x,'Receiver']]]})
-t2 = proc.time()
+t2 = proc.time()[3]
     print(paste0('Receptor_Cluster_Marker: ',t2-t1))
     cat('Done.\n')
 
@@ -296,61 +296,61 @@ MapInteractions_vect = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_v
         colnames(pairs_data) = c('Ligand','Ligand_Symbol','Receptor','Receptor_Symbol','Sender','Receiver')
     }
 
-    t0 = proc.time()
+    t0 = proc.time()[3]
     cat('  Integrating data...\n')
-    t1 = proc.time()
+    #t1 = proc.time()[3]
     pairs_data[,'Ligand_Counts'] = sapply(1:nrow(pairs_data), function(x) { counts[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
-    t2 = proc.time()
-    print(paste0('Ligand_counts: ',t2-t1))
-    t1 = proc.time()
+    #t2 = proc.time()[3]
+    #print(paste0('Ligand_counts: ',t2-t1))
+    #t1 = proc.time()[3]
     pairs_data[,'Lig_gte_3'] = sapply(1:nrow(pairs_data), function(x) { perc_gte3[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
-    t2 = proc.time()
-    print(paste0('Lig_gte_3: ',t2-t1))
-    t1 = proc.time()
+    #t2 = proc.time()[3]
+    #print(paste0('Lig_gte_3: ',t2-t1))
+    #t1 = proc.time()[3]
     pairs_data[,'Lig_gte_10'] = sapply(1:nrow(pairs_data), function(x) { perc_gte10[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
-    t2 = proc.time()
-    print(paste0('Lig_gte_10: ',t2-t1))
-    t1 = proc.time()
+    #t2 = proc.time()[3]
+    #print(paste0('Lig_gte_10: ',t2-t1))
+    #t1 = proc.time()[3]
     pairs_data[,'Ligand_Cells_Exp'] = sapply(1:nrow(pairs_data), function(x) { perc_gt0[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
-    t2 = proc.time()
-    print(paste0('Ligand_Cells_Exp: ',t2-t1))
-    t1 = proc.time()
+    #t2 = proc.time()[3]
+    #print(paste0('Ligand_Cells_Exp: ',t2-t1))
+    #t1 = proc.time()[3]
     pairs_data[,'Ligand_Avg_Exp'] = sapply(1:nrow(pairs_data), function(x) { avg_exp[[pairs_data[x,'Sender']]][pairs_data[x,'Ligand']] })
-    t2 = proc.time()
-    print(paste0('Ligand_Avg_Exp: ',t2-t1))
-    t1 = proc.time()
+    #t2 = proc.time()[3]
+    #print(paste0('Ligand_Avg_Exp: ',t2-t1))
+    #t1 = proc.time()[3]
     pairs_data[,'Ligand_Cluster_Markter'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,'Ligand'] %fin% markers[[pairs_data[x,'Sender']]]})
-    t2 = proc.time()
-    print(paste0('Ligand_Cluster_Markter: ',t2-t1))
-    t1 = proc.time()
+    #t2 = proc.time()[3]
+    #print(paste0('Ligand_Cluster_Markter: ',t2-t1))
+    #t1 = proc.time()[3]
     pairs_data[,'Ligand_secreted'] = pairs_data[,'Ligand'] %fin% secreted_ligands
-t2 = proc.time()
-    print(paste0('Ligand_secreted: ',t2-t1))
-    t1 = proc.time()
+    #t2 = proc.time()[3]
+    #print(paste0('Ligand_secreted: ',t2-t1))
+    #t1 = proc.time()[3]
     pairs_data[,'Receptor_Counts'] = sapply(1:nrow(pairs_data), function(x) { counts[[pairs_data[x,'Receiver']]][pairs_data[x,'Receptor']] })
-t2 = proc.time()
-    print(paste0('Receptor_Counts: ',t2-t1))
-    t1 = proc.time()
+    #t2 = proc.time()[3]
+    #print(paste0('Receptor_Counts: ',t2-t1))
+    #t1 = proc.time()[3]
     pairs_data[,'Rec_gte_3'] = sapply(1:nrow(pairs_data), function(x) { perc_gte3[[pairs_data[x,'Receiver']]][pairs_data[x,'Receptor']] })
-t2 = proc.time()
-    print(paste0('Rec_gte_3: ',t2-t1))
-    t1 = proc.time()
+    #t2 = proc.time()[3]
+    #print(paste0('Rec_gte_3: ',t2-t1))
+    #t1 = proc.time()[3]
     pairs_data[,'Rec_gte_10'] = sapply(1:nrow(pairs_data), function(x) { perc_gte10[[pairs_data[x,'Receiver']]][pairs_data[x,'Receptor']] })
-t2 = proc.time()
-    print(paste0('Rec_gte_10: ',t2-t1))
-    t1 = proc.time()
+    #t2 = proc.time()[3]
+    #print(paste0('Rec_gte_10: ',t2-t1))
+    #t1 = proc.time()[3]
     pairs_data[,'Receptor_Cells_Exp'] = sapply(1:nrow(pairs_data), function(x) { perc_gt0[[pairs_data[x,'Receiver']]][pairs_data[x,'Receptor']] })
-t2 = proc.time()
-    print(paste0('Receptor_Cells_Exp: ',t2-t1))
-    t1 = proc.time()
+    #t2 = proc.time()[3]
+    #print(paste0('Receptor_Cells_Exp: ',t2-t1))
+    #t1 = proc.time()[3]
     pairs_data[,'Receptor_Avg_Exp'] = sapply(1:nrow(pairs_data), function(x) { avg_exp[[pairs_data[x,'Receiver']]][pairs_data[x,'Receptor']] })
-t2 = proc.time()
-    print(paste0('Receptor_Avg_Exp: ',t2-t1))
-    t1 = proc.time()
+    #t2 = proc.time()[3]
+    #print(paste0('Receptor_Avg_Exp: ',t2-t1))
+    #t1 = proc.time()[3]
     pairs_data[,'Receptor_Cluster_Marker'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,'Receptor'] %fin% markers[[pairs_data[x,'Receiver']]]})
-t2 = proc.time()
-    print(paste0('Receptor_Cluster_Marker: ',t2-t1))
-    t0_1 = proc.time()
+    #t2 = proc.time()[3]
+    #print(paste0('Receptor_Cluster_Marker: ',t2-t1))
+    t0_1 = proc.time()[3]
     print(paste0('Total time: ',t0_1-t0))
     cat('Done.\n')
 
