@@ -263,7 +263,7 @@ MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_va
     # Cartesian product of LR pairs × cluster pairs
     pairs_data = lr_dt[, cbind(.SD, clust_dt), by = seq_len(nrow(lr_dt))][, seq_len := NULL]
 
-    cat(paste0('    Rows = ',nrow(lr_dt),'\n'))
+    cat(paste0('    Rows = ',nrow(pairs_data),'\n'))
 
     cat('  Integrating data...\n')
     pairs_data[,'Ligand_Counts' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'counts']]
