@@ -243,7 +243,7 @@ MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_va
     
     # All sender/receiver combinations
     clusts = sort(unique(seurat_obj@meta.data[[group_by]]))
-    clust_pairs = CJ(Sender = clusts, Receiver = clusts)  # Cartesian product
+    clust_dt = CJ(Sender = clusts, Receiver = clusts)  # Cartesian product
 
     # Ligand–Receptor pairs table
     if (gene_id == "symbol") {
