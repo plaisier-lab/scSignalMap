@@ -99,7 +99,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     
     
     # Iterate through ligand receptor pairs
-    t0 = Sys.time()
+    t0 = proc.time()
     i = 1
     j = 1
     pb = txtProgressBar(min = 0, max = nrow(lr_pairs), style=3, width=50, char= '=')
@@ -138,21 +138,21 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     } else {
         colnames(pairs_data) = c('Ligand','Ligand_Symbol','Receptor','Receptor_Symbol','Sender','Receiver')
     }
-    t0_1 = Sys.time()
+    t0_1 = proc.time()
     print(paste0('Total time: ',t0_1-t0))
 
 
-    t1 = Sys.time()
+    t1 = proc.time()
     pairs_data[,'Ligand_Cluster_Marker'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,'Ligand'] %fin% markers[[pairs_data[x,'Sender']]]})
-    t2 = Sys.time()
+    t2 = proc.time()
     print(paste0('Ligand_Cluster_Marker: ',t2-t1))
-    t1 = Sys.time()
+    t1 = proc.time()
     pairs_data[,'Ligand_secreted'] = pairs_data[,'Ligand'] %fin% secreted_ligands
-t2 = Sys.time()
+t2 = proc.time()
     print(paste0('Ligand_secreted: ',t2-t1))
-    t1 = Sys.time()
+    t1 = proc.time()
     pairs_data[,'Receptor_Cluster_Marker'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,'Receptor'] %fin% markers[[pairs_data[x,'Receiver']]]})
-t2 = Sys.time()
+t2 = proc.time()
     print(paste0('Receptor_Cluster_Marker: ',t2-t1))
     cat('Done.\n')
 
