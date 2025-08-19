@@ -305,7 +305,8 @@ MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_va
     t2 = proc.time()[3]
     print(paste0('Ligand_Avg_Exp: ',t2-t1))
     t1 = proc.time()[3]
-    pairs_data[,'Ligand_Cluster_Markter'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,'Ligand'] %fin% markers[[pairs_data[x,]$Sender]]})
+    pairs_data[,'Ligand_Cluster_Markter' := mapply(function(sender, ligand) { ligand %in% markers[[sender]] }, Sender, Ligand)]
+    #pairs_data[,'Ligand_Cluster_Markter'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,'Ligand'] %fin% markers[[pairs_data[x,]$Sender]]})
     t2 = proc.time()[3]
     print(paste0('Ligand_Cluster_Markter: ',t2-t1))
     t1 = proc.time()[3]
@@ -333,7 +334,8 @@ MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_va
     t2 = proc.time()[3]
     print(paste0('Receptor_Avg_Exp: ',t2-t1))
     t1 = proc.time()[3]
-    pairs_data[,'Receptor_Cluster_Marker'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,'Receptor'] %fin% markers[[pairs_data[x,'Receiver']]]})
+    pairs_data[,'Receptor_Cluster_Marker' := mapply(function(receiver, receptor) { receptor %in% markers[[receiver]] }, Receiver, Receptor)]
+    #pairs_data[,'Receptor_Cluster_Marker'] = sapply(1:nrow(pairs_data), function(x) { pairs_data[x,'Receptor'] %fin% markers[[pairs_data[x,'Receiver']]]})
     t2 = proc.time()[3]
     print(paste0('Receptor_Cluster_Marker: ',t2-t1))
     t0_1 = proc.time()[3]
