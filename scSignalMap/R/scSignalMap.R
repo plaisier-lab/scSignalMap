@@ -266,19 +266,49 @@ MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_va
     cat(paste0('    Rows = ',nrow(pairs_data),'\n'))
 
     cat('  Integrating data...\n')
+    steps = 12
+    pb = txtProgressBar(min = 0, max = steps, style = 3)
+    i = 0
     pairs_data[,'Ligand_Counts' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'counts']]
+    i = i + 1
+    setTxtProgressBar(pb, i)
     pairs_data[,'Lig_gte_3' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gte_3']]
+    i = i + 1
+    setTxtProgressBar(pb, i)
     pairs_data[,'Lig_gte_10' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gte_10']]
+    i = i + 1
+    setTxtProgressBar(pb, i)
     pairs_data[,'Ligand_Cells_Exp' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gt_0']]
+    i = i + 1
+    setTxtProgressBar(pb, i)
     pairs_data[,'Ligand_Avg_Exp' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'avg_exp']]
+    i = i + 1
+    setTxtProgressBar(pb, i)
     pairs_data[,'Ligand_Cluster_Markter' := mapply(function(sender, ligand) { ligand %in% markers[[sender]] }, Sender, Ligand)]
+    i = i + 1
+    setTxtProgressBar(pb, i)
     pairs_data[,'Ligand_secreted'] = pairs_data[,'Ligand'] %fin% secreted_ligands
+    i = i + 1
+    setTxtProgressBar(pb, i)
     pairs_data[,'Receptor_Counts' := all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), 'counts']]
+    i = i + 1
+    setTxtProgressBar(pb, i)
     pairs_data[,'Rec_gte_3' := all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), 'perc_gte_3']]
+    i = i + 1
+    setTxtProgressBar(pb, i)
     pairs_data[,'Rec_gte_10' := all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), 'perc_gte_10']]
+    i = i + 1
+    setTxtProgressBar(pb, i)
     pairs_data[,'Receptor_Cells_Exp' := all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), 'perc_gt_0']]
+    i = i + 1
+    setTxtProgressBar(pb, i)
     pairs_data[,'Receptor_Avg_Exp' := all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), 'avg_exp']]
+    i = i + 1
+    setTxtProgressBar(pb, i)
     pairs_data[,'Receptor_Cluster_Marker' := mapply(function(receiver, receptor) { receptor %in% markers[[receiver]] }, Receiver, Receptor)]
+    i = i + 1
+    setTxtProgressBar(pb, i)
+    close(pb)
     cat('Done.\n')
 
     return(pairs_data)
