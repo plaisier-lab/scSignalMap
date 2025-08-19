@@ -273,7 +273,7 @@ MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_va
     }
     
     # Prepare a matrix to hold the data
-    pairs_data = data.frame(do.call(rbind, pairs_data))
+    pairs_data = data.table(do.call(rbind, pairs_data))
     if(gene_id=='symbol') {
         colnames(pairs_data) = c('Ligand','Receptor','Sender','Receiver')
     } else {
@@ -285,7 +285,7 @@ MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_va
     #t0 = proc.time()[3]
     cat('  Integrating data...\n')
     t1 = proc.time()[3]
-    pairs_data[,'Ligand_Counts'] = as.numeric(all_dt[pairs_data, on = .(clust1='Sender', gene='Ligand'), 'counts'])
+    pairs_data[,'Ligand_Counts' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'counts']]
     t2 = proc.time()[3]
     print(paste0('Ligand_counts: ',t2-t1))
     t1 = proc.time()[3]
