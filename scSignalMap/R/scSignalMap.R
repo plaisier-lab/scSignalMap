@@ -289,19 +289,19 @@ MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_va
     t2 = proc.time()[3]
     print(paste0('Ligand_counts: ',t2-t1))
     t1 = proc.time()[3]
-    pairs_data[,'Lig_gte_3'] = as.numeric(all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gte_3'])
+    pairs_data[,'Lig_gte_3' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gte_3']]
     t2 = proc.time()[3]
     print(paste0('Lig_gte_3: ',t2-t1))
     t1 = proc.time()[3]
-    pairs_data[,'Lig_gte_10'] = all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gte_10']
+    pairs_data[,'Lig_gte_10' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gte_10']]
     t2 = proc.time()[3]
     print(paste0('Lig_gte_10: ',t2-t1))
     t1 = proc.time()[3]
-    pairs_data[,'Ligand_Cells_Exp'] = all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gt_0']
+    pairs_data[,'Ligand_Cells_Exp' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gt_0']]
     t2 = proc.time()[3]
     print(paste0('Ligand_Cells_Exp: ',t2-t1))
     t1 = proc.time()[3]
-    pairs_data[,'Ligand_Avg_Exp'] = all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'avg_exp']
+    pairs_data[,'Ligand_Avg_Exp' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'avg_exp']]
     t2 = proc.time()[3]
     print(paste0('Ligand_Avg_Exp: ',t2-t1))
     t1 = proc.time()[3]
@@ -313,23 +313,23 @@ MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_va
     t2 = proc.time()[3]
     print(paste0('Ligand_secreted: ',t2-t1))
     t1 = proc.time()[3]
-    pairs_data[,'Receptor_Counts'] = all_dt[pairs_data[,c('Receiver','Receptor')],'counts']
+    pairs_data[,'Receptor_Counts' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'counts']]
     t2 = proc.time()[3]
     print(paste0('Receptor_Counts: ',t2-t1))
     t1 = proc.time()[3]
-    pairs_data[,'Rec_gte_3'] = all_dt[pairs_data[,c('Receiver','Receptor')],'perc_gte_3']
+    pairs_data[,'Rec_gte_3' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gte_3']]
     t2 = proc.time()[3]
     print(paste0('Rec_gte_3: ',t2-t1))
     t1 = proc.time()[3]
-    pairs_data[,'Rec_gte_10'] = all_dt[pairs_data[,c('Receiver','Receptor')],'perc_gte_10']
+    pairs_data[,'Rec_gte_10' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gte_10']]
     t2 = proc.time()[3]
     print(paste0('Rec_gte_10: ',t2-t1))
     t1 = proc.time()[3]
-    pairs_data[,'Receptor_Cells_Exp'] = all_dt[pairs_data[,c('Receiver','Receptor')],'perc_gt_0']
+    pairs_data[,'Receptor_Cells_Exp' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gt_0']]
     t2 = proc.time()[3]
     print(paste0('Receptor_Cells_Exp: ',t2-t1))
     t1 = proc.time()[3]
-    pairs_data[,'Receptor_Avg_Exp'] = all_dt[pairs_data[,c('Receiver','Receptor')],'avg_exp']
+    pairs_data[,'Receptor_Avg_Exp' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'avg_exp']]
     t2 = proc.time()[3]
     print(paste0('Receptor_Avg_Exp: ',t2-t1))
     t1 = proc.time()[3]
