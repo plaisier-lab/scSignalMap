@@ -173,7 +173,7 @@ t2 = proc.time()[3]
 #' @param gene_id: what type of gene ID is used, either 'ensembl' or 'symbol', defaults to 'ensembl'
 #' @return data.frame with putative interactions
 #' @export
-MapInteractions_vect = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_adj_lte = 0.05, min_pct = 0.1, species='human', gene_id='ensembl') {
+MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_adj_lte = 0.05, min_pct = 0.1, species='human', gene_id='ensembl') {
     cat('Running scSignalMap:\n')
 
     ## Step 1. Load up the data
@@ -276,13 +276,12 @@ MapInteractions_vect = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_v
             } else {
                 tmp1 = c(lig1, lig_convert[lig1], rec1, rec_convert[rec1], clust1)
             }
-            tmp2 = c(tmp1, counts[[clust1]][lig1], perc_gte3[[clust1]][lig1], perc_gte10[[clust1]][lig1], perc_gt0[[clust1]][lig1], avg_exp[[clust1]][lig1])
 
             # Iterate through reciever cell types
             for(clust2 in sort(unique(seurat_obj@meta.data[,group_by]))) {
                 # Row bind the data into the matrix
-                tmp3 = c(tmp2, clust2, counts[[clust2]][rec1], perc_gte3[[clust2]][rec1], perc_gte10[[clust2]][rec1], perc_gt0[[clust2]][rec1], avg_exp[[clust2]][rec1])
-                pairs_data[[i]] = tmp3
+                tmp2 = c(tmp1, clust2)
+                pairs_data[[i]] = tmp2
                 i = i + 1
             }
         }
