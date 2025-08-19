@@ -261,6 +261,7 @@ MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_va
     
     
     # Iterate through ligand receptor pairs
+    t0 = proc.time()[3]
     i = 1
     pairs_data = list()
     for(pair1 in 1:nrow(lr_pairs)) {
@@ -294,6 +295,8 @@ MapInteractions_vec = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_va
     } else {
         colnames(pairs_data) = c('Ligand','Ligand_Symbol','Receptor','Receptor_Symbol','Sender','Receiver')
     }
+    t0_1 = proc.time()[3]
+    print(paste0('Total time: ',t0_1-t0))
 
     t0 = proc.time()[3]
     cat('  Integrating data...\n')
