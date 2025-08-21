@@ -125,7 +125,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     pairs_data[,'Ligand_Cluster_Markter' := mapply(function(sender, ligand) { ligand %in% markers[[sender]] }, Sender, Ligand)]
     i = i + 1
     setTxtProgressBar(pb, i)
-    pairs_data[,'Ligand_secreted'] = pairs_data[,'Ligand'] %fin% secreted_ligands
+    pairs_data[,'Ligand_secreted'] = sapply(pairs_data[,'Ligand'], function(x) { x %fin% secreted_ligands })
     i = i + 1
     setTxtProgressBar(pb, i)
     pairs_data[,'Receptor_Counts' := all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), 'counts']]
