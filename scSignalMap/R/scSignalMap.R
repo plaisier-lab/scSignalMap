@@ -110,10 +110,10 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     pairs_data[,'Ligand_Counts' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'counts']]
     i = i + 1
     setTxtProgressBar(pb, i)
-    pairs_data[,'Lig_gte_3' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gte_3']]
+    pairs_data[,'Ligand_gte_3' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gte_3']]
     i = i + 1
     setTxtProgressBar(pb, i)
-    pairs_data[,'Lig_gte_10' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gte_10']]
+    pairs_data[,'Ligand_gte_10' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gte_10']]
     i = i + 1
     setTxtProgressBar(pb, i)
     pairs_data[,'Ligand_Cells_Exp' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'perc_gt_0']]
@@ -122,7 +122,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     pairs_data[,'Ligand_Avg_Exp' := all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), 'avg_exp']]
     i = i + 1
     setTxtProgressBar(pb, i)
-    pairs_data[,'Ligand_Cluster_Markter' := mapply(function(sender, ligand) { ligand %in% markers[[sender]] }, Sender, Ligand)]
+    pairs_data[,'Ligand_Cluster_Marker' := mapply(function(sender, ligand) { ligand %in% markers[[sender]] }, Sender, Ligand)]
     i = i + 1
     setTxtProgressBar(pb, i)
     pairs_data[,'Ligand_secreted'] = sapply(pairs_data[,'Ligand'], function(x) { x %fin% secreted_ligands })
@@ -131,10 +131,10 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     pairs_data[,'Receptor_Counts' := all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), 'counts']]
     i = i + 1
     setTxtProgressBar(pb, i)
-    pairs_data[,'Rec_gte_3' := all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), 'perc_gte_3']]
+    pairs_data[,'Receptor_gte_3' := all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), 'perc_gte_3']]
     i = i + 1
     setTxtProgressBar(pb, i)
-    pairs_data[,'Rec_gte_10' := all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), 'perc_gte_10']]
+    pairs_data[,'Receptor_gte_10' := all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), 'perc_gte_10']]
     i = i + 1
     setTxtProgressBar(pb, i)
     pairs_data[,'Receptor_Cells_Exp' := all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), 'perc_gt_0']]
