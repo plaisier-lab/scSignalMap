@@ -2,7 +2,7 @@
 
 ## Install
 # install.packages('fastmatch')
-# remotes::install_github('plaisier-lab/scSignalMap/scSignalMap')
+# remotes::install_github('plaisier-lab/scSignalMap/scSignalMap@old_version')
 
 library(Seurat)
 library(dplyr)
@@ -15,5 +15,5 @@ setwd('/files/test')
 seurat_obj = readRDS('Q1_normalized_ensembl.rds')
 
 interactions1 = MapInteractions(seurat_obj, 'seurat_clusters')
-write.csv(interactions1, 'Q1_norm_ens_scSignalMap_new.csv')
+write.csv(interactions1, 'Q1_norm_ens_scSignalMap_old.csv')
 
