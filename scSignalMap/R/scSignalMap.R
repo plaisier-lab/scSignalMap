@@ -1,6 +1,6 @@
 #' Capturing signaling pathways using scRNA-seq data
 #'
-#' [Write a description]
+#' Function to capture signaling pathways using scRNA-seq data.
 #'
 #'
 #' @param seurat_obj: a seurat object must be supplied to classify, no default
