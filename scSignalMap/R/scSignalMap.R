@@ -152,3 +152,252 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     return(pairs_data)
 }
 
+
+##' Perform Differential Expression for a Desired Celltype
+#'
+#' This function identifies differentially expressed (DE) genes between two conditions 
+#' within a specific celltype of interest. It uses Seurat's `FindMarkers` function with 
+#' customizable log2FC and adjusted p-value cutoffs. The results are filtered and 
+#' annotated with gene symbols from Ensembl IDs. 
+#'
+#' @param seurat_obj: seurat object containing scRNA data
+#' @param prep_SCT: specify whether the PrepSCTFindMarker function needs to be applied, defaults to FALSE
+#' @param cond_column: meta.data column name for condition information 
+#' @param cond_name1: condition column value that compared to cond_name2 for differential expression analysis, must be specified
+#' @param cond_name2: condition column value that compared to cond_name1 for differential expression analysis, must be specified
+#' @param celltype_column: meta.data column name for celltype information
+#' @param celltype_name: celltype column value of interest, must be specified 
+#' @param FC_cutoff: desired cutoff for log2FC values using >= the absolute value, default is 0.3
+#' @param adj_p_val_cutoff: desired cutoff for the adjusted p value, default is 0.05
+#' @return A data frame of DE genes between conditions for specified cell type, including Ensembl ID, gene symbol, log2FC, and adjusted p-value.
+#' @export
+find_markers_btwn_cond_for_celltype = function(seurat_obj = NULL, prep_SCT = FALSE, cond_column = NULL, cond_name1 = NULL, cond_name2 = NULL, celltype_column = NULL, celltype_name = NULL, FC_cutoff = 0.3, adj_p_val_cutoff = 0.05) {
+
+    message("Subsetting and setting identities...")
+    cells_to_keep = rownames(seurat_obj@meta.data)[seurat_obj@meta.data[,celltype_column] == celltype_name]
+    subset_cells = subset(seurat_obj, cells = cells_to_keep)
+    Idents(subset_cells) = subset_cells@meta.data[,cond_column]
+
+    message("Preparing for and running FindMarkers...")
+    if(prep_SCT==TRUE) {
+        subset_cells = PrepSCTFindMarkers(subset_cells)
+    }
+    de_cells = FindMarkers(subset_cells, ident.1 = cond_name1, ident.2 = cond_name2)
+
+    message("Filtering DE genes by log2FC and adjusted p-value...")
+    de_cond_celltype = de_cells %>%
+                       filter((avg_log2FC >= FC_cutoff | avg_log2FC <= -FC_cutoff) & p_val_adj <= adj_p_val_cutoff)
+
+    message("Adding gene symbols...")
+    ensembl_ids = rownames(de_cond_celltype)
+    gene_symbols = mapIds(org.Hs.eg.db,
+                          keys = ensembl_ids,
+                          column = "SYMBOL",
+                          keytype = "ENSEMBL",
+                          multiVals = "first")
+
+    de_cond_celltype = data.frame(ensembl_id = ensembl_ids,
+                                  gene_symbol = gene_symbols,
+                                  de_cond_celltype,
+                                  stringsAsFactors = FALSE)
+
+    de_cond_celltype = de_cond_celltype[, c("ensembl_id", "gene_symbol", setdiff(colnames(de_cond_celltype), c("ensembl_id", "gene_symbol")))]
+
+    return(de_cond_celltype)
+}
+
+
+##' Identify upregulated receptors
+#'
+#' This function identifies upregualted receptors from a given DE gene table using a chosen log2FC cutoff
+#'
+#' @param de_condition_filtered: differentially expressed genes output from find_markers_btwn_cond_for_celltype function
+#' @param FC_cutoff: desired cutoff for log2FC values using >= the absolute value, default is 0.3
+#' @return A dataframe with identified DE genes and their log2FC from previously chosen condition
+#' @export
+find_upreg_receptors = function(de_condition_filtered= NULL, FC_cutoff = 0.3) {
+
+    message("Loading ligand-receptor information")
+    lr_list = read.csv(system.file('extdata', 'lr_network.csv', package='scSignalMap'))
+    receptor_genes = unique(na.omit(lr_list$receptor_human_ensembl))
+    ensembl_to_symbol = setNames(lr_list$receptor_human_symbol, lr_list$receptor_human_ensembl)
+
+    message("Filter for upregulated receptors")
+    upreg_receptors = de_condition_filtered %>%
+                      filter(ensembl_id %in% receptor_genes & avg_log2FC >= FC_cutoff)
+    upreg_receptors$gene_symbol = ensembl_to_symbol[upreg_receptors$ensembl_id]
+
+    upreg_receptors = upreg_receptors[, c("gene_symbol", setdiff(names(upreg_receptors), "gene_symbol"))]  
+
+    return(upreg_receptors)
+}
+
+
+##' Filter identified ligand-receptor interactions
+#'
+#' This function filters interactions from a scSignalMap output based on celltype and ligand secretion
+#'
+#' @param interactions: ligand-receptor interactions dataframe from MapInteractions function of scSignalMap
+#' @param sender_celltypes: celltype of cell(s) that are "senders" in the cell-to-cell communication interaction, ex. "<celltype>" or c("celltype1", "celltype2")
+#' @param receiver_celltypes: celltype of cell(s) that are "receivers" in the cell-to-cell communication interaction, ex. "<celltype>" or c("celltype1", "celltype2")  
+#' @param secreted_lig: logical statement if the ligand in the interaction is secreted by the sending cell, default is TRUE
+#' @return A data frame of filtered interactions
+#' @export
+filter_lr_interactions = function(interactions = NULL, sender_celltypes = NULL, receiver_celltypes = NULL, secreted_lig = TRUE) {
+
+      message("Filtering scSignalMap interactions")
+      
+      if (secreted_lig) {
+          interactions_filtered = interactions %>%
+                                  filter(Ligand_secreted == TRUE,
+                                  Receiver %in% receiver_celltypes,
+                                  Sender %in% sender_celltypes,
+                                  Sender != Receiver)
+      } else {
+          interactions_filtered = interactions %>%
+                                  filter(Receiver %in% receiver_celltypes,
+                                  Sender %in% sender_celltypes,
+                                  Sender != Receiver)
+      }
+      
+      return(interactions_filtered)
+}
+
+
+#######################################################################
+## Intersect Upregulated Receptors with Ligand-Receptor Interactions ##
+#######################################################################
+
+##' Intersect upregulated receptors with filtered ligand-receptor interactions
+#'
+#' This function takes previously identified DE receptor genes from chosen condition and identifies overlapping interactions
+#'
+#' @param upreg_receptors: name for output file containing DE receptors
+#' @param interactions: ligand-receptor interactions dataframe from map_interactions 
+#' @return A data frame of idendified DE receptor genes found in previously idendified interactions list
+#' @export
+intersect_upreg_receptors_with_lr_interactions = function(upreg_receptors = NULL, interactions = NULL) {
+
+    message("Intersect upregulated receptors with filtered interactions")
+
+    upreg_receptors_filtered_and_compared = upreg_receptors %>%
+                                            filter(gene_symbol %in% interactions$Receptor_Symbol)
+
+return(upreg_receptors_filtered_and_compared)
+}
+
+
+##' Identify Enriched Pathways from DE Genes Using Enrichr
+#'
+#' This function performs pathway enrichment analysis on differentially expressed (DE) genes 
+#' using the Enrichr. It filters enrichment results by an adjusted p-value cutoff and 
+#' saves both individual and combined results for selected databases. The function uses a 
+#' user-provided background gene set (from a Seurat object) and compares enrichment results 
+#' to input DE genes to highlight relevant pathways.
+#'
+#' @param seurat_obj: seurat object containing genes for Enrichr to use as background, likely to be seurat object used as input for scSignalMap's MapInteractions function, must provide input
+#' @param de_condition_filtered: DE genes output from find_markers_btwn_cond_for_celltype function, used to extract genes for Enrichr use
+#' @param enrichr_databases: databases that Enrichr will use for pathway idenification, default includes c("BioCarta_2016", "GO_Biological_Process_2025", "KEGG_2021_Human", "NCI-Nature_2016", "WikiPathways_2024_Human")
+#' @param adj_p_val_method: method for p-value adjustments, default is Benjamini-Hochberg (BH) 
+#' @param adj_p_val_cutoff: desired cutoff for the adjusted p-value, default is 0.05
+#' @return A data frame containing identified pathways, associated statistical values, common genes, etc.
+#' @export
+find_enriched_pathways = function(seurat_obj = NULL, de_condition_filtered = NULL, enrichr_databases = c("BioCarta_2016", "GO_Biological_Process_2025", "KEGG_2021_Human", "NCI-Nature_2016", "WikiPathways_2024_Human"), adj_p_val_method = "BH", adj_p_val_cutoff = 0.05) {
+
+  genes = unique(as.character(de_condition_filtered$gene_symbol))
+
+  background_genes = rownames(seurat_obj[["RNA"]])
+  background_genes = mapIds(org.Hs.eg.db, 
+                            keys = background_genes, 
+                            column = "SYMBOL", 
+                            keytype = "ENSEMBL", 
+                            multiVals = "first")
+
+  enrichment_results = enrichr(genes, enrichr_databases, background = background_genes)
+
+  for (db in names(enrichment_results)) {
+      data = enrichment_results[[db]]
+      data$Adjusted.P.value = p.adjust(data$P.value, method = adj_p_val_method)
+      enrichment_results[[db]] = data
+  }
+
+  for (db in names(enrichment_results)) {
+      output = paste0("enrichr_results/", db, ".csv")
+      write.csv(enrichment_results[[db]], file = output, row.names = FALSE)
+  }
+
+  enrichment_results_combined = bind_rows(
+      lapply(names(enrichment_results), function(db) {
+          df = enrichment_results[[db]]
+          df$database = db
+          df })
+  )
+
+  de_genes = unique(de_condition_filtered$gene_symbol)
+
+  enrichr_results = filter(enrichment_results_combined, grepl(paste(de_genes, collapse="|"), Genes))
+  enrichr_results = enrichr_results[enrichr_results$Adjusted.P.value < adj_p_val_cutoff, ]
+
+  return(enrichr_results)
+}
+
+# Needs DOCSTRINGS!!!
+run_full_scSignalMap_pipeline = function(workingdir = "/files", seurat_obj = NULL, prep_SCT = TRUE, cond_column = NULL, cond_name1 = NULL, cond_name2 = NULL, celltype_column = NULL, celltype_name = NULL, sender_celltypes = NULL, receiver_celltypes = NULL, secreted_lig = TRUE, FC_cutoff = 0.3, adj_p_val_cutoff = 0.05, enrichr_databases = c("BioCarta_2016", "GO_Biological_Process_2025", "KEGG_2021_Human", "NCI-Nature_2016", "WikiPathways_2024_Human"), adj_p_val_method = "BH") {
+
+  #####################
+  ### Run pipeline  ###
+  #####################
+  message("Running MapInteractions...")
+  setwd(workingdir)
+  seurat_obj$celltype = Idents(seurat_obj)
+  LR_interactions = MapInteractions(seurat_obj, 'celltype')
+
+  message("Finding DE genes...")
+  de_cond_celltype = find_markers_btwn_cond_for_celltype(
+      seurat_obj = seurat_obj,
+      prep_SCT = prep_SCT,
+      cond_column = cond_column,
+      cond_name1 = cond_name1,
+      cond_name2 = cond_name2,
+      celltype_column = celltype_column,
+      celltype_name = celltype_name,
+      FC_cutoff = FC_cutoff,
+      adj_p_val_cutoff = adj_p_val_cutoff)
+
+  message("Finding upregulated receptors...")
+  upreg_receptors = find_upreg_receptors(
+      de_condition_filtered = de_cond_celltype,
+      FC_cutoff = FC_cutoff)
+
+  message("Filtering LR interactions...")
+  interactions_filtered = filter_lr_interactions(
+      interactions = LR_interactions,
+      sender_celltypes = sender_celltypes,
+      receiver_celltypes = receiver_celltypes,
+      secreted_lig = TRUE)
+
+  message("Intersecting receptors with interactions...")
+  upreg_receptors_filtered_and_compared =
+        intersect_upreg_receptors_with_lr_interactions(
+      upreg_receptors = upreg_receptors,
+      interactions = interactions_filtered)
+
+  message("Running pathway enrichment...")
+  enrichr_results = find_enriched_pathways(
+      seurat_obj = seurat_obj,
+      de_condition_filtered = de_cond_celltype,
+      enrichr_databases = enrichr_databases,
+      adj_p_val_method = adj_p_val_method,
+      adj_p_val_cutoff = adj_p_val_cutoff)
+
+  ###################################
+  ### Return all results together ###
+  ###################################
+  return(list(
+      LR_interactions = LR_interactions,
+      de_cond_celltype = de_cond_celltype,
+      upreg_receptors = upreg_receptors,
+      interactions_filtered = interactions_filtered,
+      upreg_receptors_filtered_and_compared = upreg_receptors_filtered_and_compared,
+      enrichr_results = enrichr_results))
+}
