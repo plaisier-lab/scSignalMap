@@ -338,7 +338,9 @@ find_enriched_pathways = function(seurat_obj = NULL, de_condition_filtered = NUL
       data$Adjusted.P.value = p.adjust(data$P.value, method = adj_p_val_method)
       enrichment_results[[db]] = data
   }
-
+    if (!dir.exists("enrichr_results")) {
+      dir.create("enrichr_results")
+  }
   for (db in names(enrichment_results)) {
       output = paste0("enrichr_results/", db, ".csv")
       write.csv(enrichment_results[[db]], file = output, row.names = FALSE)
@@ -391,6 +393,7 @@ run_full_scSignalMap_pipeline = function(workingdir = "/files", seurat_obj = NUL
   #####################
   message("Running MapInteractions...")
   setwd(workingdir)
+  seurat_obj = readRDS(seurat_obj)
   seurat_obj$celltype = Idents(seurat_obj)
   LR_interactions = MapInteractions(seurat_obj, 'celltype')
 
