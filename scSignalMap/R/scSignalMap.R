@@ -1,3 +1,21 @@
+##################################################################
+##  ______     ______     __  __                                ##
+## /\  __ \   /\  ___\   /\ \/\ \                               ##
+## \ \  __ \  \ \___  \  \ \ \_\ \                              ##
+##  \ \_\ \_\  \/\_____\  \ \_____\                             ##
+##   \/_/\/_/   \/_____/   \/_____/                             ##
+## @Developed by: Plaisier Lab                                  ##
+##   (https://plaisierlab.engineering.asu.edu/)                 ##
+##   Arizona State University                                   ##
+##   242 ISTB1, 550 E Orange St                                 ##
+##   Tempe, AZ  85281                                           ##
+## @github: https://github.com/plaisier-lab/scSignalMap         ##
+## @Author: Jillian Woodley, Samantha O'Connor, Chris Plaisier  ##
+## @License:  GNU GPLv3                                         ##
+##                                                              ##
+## If this program is used in your analysis please              ##
+## mention who built it. Thanks. :-)                            ##
+##################################################################
 #' Capturing signaling pathways using scRNA-seq data
 #'
 #' Function to capture signaling pathways using scRNA-seq data.
