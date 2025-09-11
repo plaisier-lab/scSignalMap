@@ -117,12 +117,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     }
 
     # Cartesian product of LR pairs × cluster pairs
-    if(gene_id=='symbol') {
-        pairs_data = CJ(Ligand=lr_dt$Ligand_Symbol, Receptor=lr_dt$Receptor_Symbol, Sender=clust_dt$Sender, Receiver=clust_dt$Receiver)
-    } else {
-        pairs_data = CJ(Ligand=lr_dt$Ligand, Receptor=lr_dt$Receptor, Sender=clust_dt$Sender, Receiver=clust_dt$Receiver)
-    }
-    #pairs_data = lr_dt[, cbind(.SD, clust_dt), by = seq_len(nrow(lr_dt))][, seq_len := NULL]
+    pairs_data = lr_dt[, cbind(.SD, clust_dt), by = seq_len(nrow(lr_dt))][, seq_len := NULL]
 
     cat(paste0('    Rows = ',nrow(pairs_data),'\n'))
 
