@@ -117,7 +117,11 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     }
 
     # Cartesian product of LR pairs x cluster pairs
-    pairs_data = lr_dt[, cbind(.SD, clust_dt), by = seq_len(nrow(lr_dt))][, `:=`(seq_len, NULL)]
+    lr_dt[, dummy := 1]
+    clust_dt[, dummy := 1]
+
+    pairs_data <- lr_dt[clust_dt, on = "dummy", allow.cartesian = TRUE][, dummy := NULL]
+    #pairs_data = lr_dt[, cbind(.SD, clust_dt), by = seq_len(nrow(lr_dt))][, `:=`(seq_len, NULL)]
 
     cat(paste0('    Rows = ',nrow(pairs_data),'\n'))
 
