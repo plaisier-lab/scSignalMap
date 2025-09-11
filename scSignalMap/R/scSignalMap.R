@@ -55,7 +55,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     
     putative_markers = FindAllMarkers(seurat_obj, group.by=group_by, min.pct=min_pct, verbose=T)
     markers = list()
-    for(clust1 in as.character(sort(unique(seurat_obj@meta.data[[group_by]])))) {
+    for(clust1 in as.character(sort(unique(seurat_obj@meta.data[group_by])))) {
         markers[[clust1]] = putative_markers %>% filter(cluster==clust1 & avg_log2FC>=avg_log2FC_gte & p_val_adj<=p_val_adj_lte) %>% pull(name='gene')
         #cat(paste0('    ',cluster1,': ',length(markers[[cluster1]]),'\n'))
     }
@@ -75,7 +75,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     seurat_obj_split = SplitObject(seurat_obj, split.by=group_by)
 
     # Build a data.table with statistics
-    all_dt = rbindlist(lapply(as.character(sort(unique(seurat_obj@meta.data[[group_by]]))), function(clust1) {
+    all_dt = rbindlist(lapply(as.character(sort(unique(seurat_obj@meta.data[group_by]))), function(clust1) {
                  mat = as.matrix(seurat_obj_split[[clust1]]@assays$RNA@layers$counts)
                  genes = rownames(seurat_obj_split[[clust1]]@assays$RNA)
                  n_cells = ncol(mat)
