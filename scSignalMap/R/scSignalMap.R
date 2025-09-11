@@ -101,7 +101,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     clusts = as.character(sort(unique(seurat_obj@meta.data[[group_by]])))
     clust_dt = data.table::CJ(Sender = clusts, Receiver = clusts)  # Cartesian product
 
-    # Ligand–Receptor pairs table
+    # Ligand-Receptor pairs table
     if (gene_id == "symbol") {
       lr_dt = data.table::data.table(
         Ligand   = lr_pairs[, 1],
@@ -116,7 +116,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
       )
     }
 
-    # Cartesian product of LR pairs × cluster pairs
+    # Cartesian product of LR pairs x cluster pairs
     pairs_data = lr_dt[, data.table::cbind(.SD, clust_dt), by = seq_len(nrow(lr_dt))][, `:=`(seq_len, NULL)]
 
     cat(paste0('    Rows = ',nrow(pairs_data),'\n'))
@@ -136,7 +136,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     utils::setTxtProgressBar(pb, 5)
     pairs_data[, `:=`(Ligand_Cluster_Marker, mapply(function(sender, ligand) { ligand %in% markers[[sender]] }, pairs_data$Sender, pairs_data$Ligand))]
     utils::setTxtProgressBar(pb, 6)
-    pairs_data[, `:=`(Ligand_secreted, sapply(pairs_data[['Ligand']], function(x) { x %fin% secreted_ligands })
+    pairs_data[, `:=`(Ligand_secreted, sapply(pairs_data[['Ligand']], function(x) { x %fin% secreted_ligands }))]
     utils::setTxtProgressBar(pb, 7)
     pairs_data[, ':='(Receptor_Counts, all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), counts])]
     utils::setTxtProgressBar(pb, 8)
