@@ -154,7 +154,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     utils::setTxtProgressBar(pb, 12)
     pairs_data[, `:=`(Receptor_Cluster_Marker, mapply(function(receiver, receptor) { receptor %in% markers[[receiver]] }, pairs_data$Receiver, pairs_data$Receptor))]
     utils::setTxtProgressBar(pb, 13)
-    utils::close(pb)
+    close(pb)
     cat('Done.\n')
 
     return(pairs_data)
