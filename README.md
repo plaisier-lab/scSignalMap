@@ -20,7 +20,7 @@ Installation of scSignalMap in R is accomplished by:
 ## Dockerfile and Image
 
 ## Running scSignalMap
->The scSignalMap pipeline is performed through one function, `run_full_scSignalMap_pipeline()` and an optional function, `create_master_list`, that creates a master list of scSignalMap outputs.
+>The scSignalMap pipeline is performed through one function, `run_full_scSignalMap_pipeline()` and an optional function, `create_master_interaction_list`, that creates a master list of scSignalMap outputs.
 
 Below is an example of inputs for `run_full_scSignalMap_pipeline`:
 
@@ -46,9 +46,15 @@ enrichr_databases = c("BioCarta_2016",
 		    "WikiPathways_2024_Human"), 
 adj_p_val_method = "BH")
 ```
-Below is an example of inputs for `create_master_list`:
+Below is an example of inputs for `create_master_interaction_list`:
 
-
+```
+master_interaction_list = create_master_interaction_list(
+  enrichr_results = results$enrichr_results,
+  de_receptors = results$upreg_receptors_filtered_and_compared,
+  scSignalMap_data_filtered = results$interactions_filtered
+)
+```
 
 ## Accessing Outputs
 Accessing results from `run_full_scSignalMap_pipeline` can be accomplished using:
