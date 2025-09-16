@@ -21,9 +21,9 @@ scSignalMap usage requires R packages:
 `scSignalMap, Seurat, enrichR, dplyr, tidyr, stringr, org.Hs.eg.db, AnnotationDbi, fastmatch, and data.table` to run the full pipline. 
  ## Installation
 Installation of scSignalMap in R is accomplished by:
-
-`remotes::install_github("plaisier-lab/scSignalMap/scSignalMap")`
-
+```r
+remotes::install_github("plaisier-lab/scSignalMap/scSignalMap")
+```
 ## Dockerfile and Image
 
 ## Running scSignalMap
@@ -64,10 +64,13 @@ master_interaction_list = create_master_interaction_list(
 
 ## Accessing Outputs
 Accessing results from `run_full_scSignalMap_pipeline` can be accomplished using the following code:
->`write.csv(results$enrichr_results, "<file_name.csv>")`
-
+```r
+write.csv(results$enrichr_results, "<file_name.csv>")
+```
 Accessing results from `create_master_interaction_list` can be accomplished using the following code:
->`write.csv(master_interaction_list, "<file_name.csv>")`
+```r
+write.csv(master_interaction_list, "<file_name.csv>")
+```
 ## Maintainers
 For issues or comments, please contact: [Chris Plaiser](mailto:plaisier@asu.edu)
 
