@@ -8,6 +8,13 @@
  - Pathway enrichment analysis
 
  ## Table of Contents
+- Requirements and Dependencies
+- Installation
+- Dockerfile and Image
+- Tutorials
+  - Running scSignalMap
+  - Accessing Outputs
+- Maintainers
 
  ## Requirements and Dependencies
 scSignalMap usage requires R packages:
@@ -24,7 +31,7 @@ Installation of scSignalMap in R is accomplished by:
 
 Below is an example of inputs for `run_full_scSignalMap_pipeline`:
 
-```
+```r
 results = run_full_scSignalMap_pipeline(
 workingdir = "/files", 
 seurat_obj = 'seurat_objects/MN_big_int.rds', 
@@ -48,15 +55,20 @@ adj_p_val_method = "BH")
 ```
 Below is an example of inputs for `create_master_interaction_list`:
 
-```
+```r
 master_interaction_list = create_master_interaction_list(
   enrichr_results = results$enrichr_results,
   de_receptors = results$upreg_receptors_filtered_and_compared,
-  scSignalMap_data_filtered = results$interactions_filtered
-)
+  scSignalMap_data_filtered = results$interactions_filtered)
 ```
 
 ## Accessing Outputs
-Accessing results from `run_full_scSignalMap_pipeline` can be accomplished using:
-`write.csv()`
+Accessing results from `run_full_scSignalMap_pipeline` can be accomplished using the following code:
+>`write.csv(results$enrichr_results, "<file_name.csv>")`
+
+Accessing results from `create_master_interaction_list` can be accomplished using the following code:
+>`write.csv(master_interaction_list, "<file_name.csv>")`
 ## Maintainers
+For issues or comments, please contact: [Chris Plaiser](mailto:plaisier@asu.edu)
+
+For other great packages from the Plaisier Lab, please check here: [@plaisier_lab](https://github.com/plaisier_lab)
