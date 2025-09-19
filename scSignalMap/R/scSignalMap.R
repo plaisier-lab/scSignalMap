@@ -183,7 +183,7 @@ find_markers_btwn_cond_for_celltype = function(seurat_obj = NULL, prep_SCT = FAL
 
     message("Preparing to run FindMarkers...")
     if(prep_SCT==TRUE) {
-        subset_cells = PrepSCTFindMarkers(subset_cells)
+        seurat_obj = PrepSCTFindMarkers(seurat_obj)
     }
 
     message("Subsetting and setting identities...")
