@@ -179,17 +179,19 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
 #' @param adj_p_val_cutoff: desired cutoff for the adjusted p value, default is 0.05
 #' @return A data frame of DE genes between conditions for specified cell type, including Ensembl ID, gene symbol, log2FC, and adjusted p-value.
 #' @export
-find_markers_btwn_cond_for_celltype = function(seurat_obj = NULL, prep_SCT = FALSE, cond_column = NULL, cond_name1 = NULL, cond_name2 = NULL, celltype_column = NULL, celltype_name = NULL, FC_cutoff = 0.3, adj_p_val_cutoff = 0.05) {
+find_markers_btwn_cond_for_celltype = function(seurat_obj = NULL, prep_SCT = FALSE, cond_column = NULL, cond_name1 = NULL, cond_name2 = NULL, celltype_column = NULL, celltype_name = NULL, FC_cutoff = 0.3, adj_p_val_cutoff = 0.05, ensdb = 'EnsDb.Hsapiens.v86') {
+
+    message("Preparing to run FindMarkers...")
+    if(prep_SCT==TRUE) {
+        subset_cells = PrepSCTFindMarkers(subset_cells)
+    }
 
     message("Subsetting and setting identities...")
     cells_to_keep = rownames(seurat_obj@meta.data)[seurat_obj@meta.data[,celltype_column] == celltype_name]
     subset_cells = subset(seurat_obj, cells = cells_to_keep)
     Idents(subset_cells) = subset_cells@meta.data[,cond_column]
 
-    message("Preparing for and running FindMarkers...")
-    if(prep_SCT==TRUE) {
-        subset_cells = PrepSCTFindMarkers(subset_cells)
-    }
+    message("Running FindMarkers...")
     de_cells = FindMarkers(subset_cells, ident.1 = cond_name1, ident.2 = cond_name2)
 
     message("Filtering DE genes by log2FC and adjusted p-value...")
@@ -198,11 +200,13 @@ find_markers_btwn_cond_for_celltype = function(seurat_obj = NULL, prep_SCT = FAL
 
     message("Adding gene symbols...")
     ensembl_ids = rownames(de_cond_celltype)
-    gene_symbols = mapIds(org.Hs.eg.db,
-                          keys = ensembl_ids,
-                          column = "SYMBOL",
-                          keytype = "ENSEMBL",
-                          multiVals = "first")
+    ## TODO ## - remove later    
+    #gene_symbols = mapIds(org.Hs.eg.db,
+    #                      keys = ensembl_ids,
+    #                      column = "SYMBOL",
+    #                      keytype = "ENSEMBL",
+    #                      multiVals = "first")
+    gene_symbols = AnnotationDbi::select(ensdb, keys = ensembl_ids, keytype = "GENEID", columns = c("SYMBOL"))
 
     de_cond_celltype = data.frame(ensembl_id = ensembl_ids,
                                   gene_symbol = gene_symbols,
@@ -310,45 +314,47 @@ return(upreg_receptors_filtered_and_compared)
 #' @param adj_p_val_cutoff: desired cutoff for the adjusted p-value, default is 0.05
 #' @return A data frame containing identified pathways, associated statistical values, common genes, etc.
 #' @export
-find_enriched_pathways = function(seurat_obj = NULL, de_condition_filtered = NULL, enrichr_databases = c("BioCarta_2016", "GO_Biological_Process_2025", "KEGG_2021_Human", "NCI-Nature_2016", "WikiPathways_2024_Human"), adj_p_val_method = "BH", adj_p_val_cutoff = 0.05) {
+find_enriched_pathways = function(seurat_obj = NULL, de_condition_filtered = NULL, enrichr_databases = c("BioCarta_2016", "GO_Biological_Process_2025", "KEGG_2021_Human", "NCI-Nature_2016", "WikiPathways_2024_Human"), adj_p_val_method = "BH", adj_p_val_cutoff = 0.05, ensdb = 'EnsDb.Hsapiens.v86') {
 
-  genes = unique(as.character(de_condition_filtered$gene_symbol))
+    genes = unique(as.character(de_condition_filtered$gene_symbol))
 
-  background_genes = rownames(seurat_obj[["RNA"]])
-  background_genes = mapIds(org.Hs.eg.db, 
-                            keys = background_genes, 
-                            column = "SYMBOL", 
-                            keytype = "ENSEMBL", 
-                            multiVals = "first")
+    background_genes = rownames(seurat_obj[["RNA"]])
+    #### TODO ### - remove later
+    #background_genes = mapIds(org.Hs.eg.db, 
+    #                          keys = background_genes, 
+    #                          column = "SYMBOL", 
+    #                          keytype = "ENSEMBL", 
+    #                          multiVals = "first")
+    background_genes = AnnotationDbi::select(EnsDb.Hsapiens.v86, keys = background_genes, keytype = "GENEID", columns = c("SYMBOL"))
 
-  enrichment_results = enrichr(genes, enrichr_databases, background = background_genes)
+    enrichment_results = enrichr(genes, enrichr_databases, background = background_genes)
 
-  for (db in names(enrichment_results)) {
-      data = enrichment_results[[db]]
-      data$Adjusted.P.value = p.adjust(data$P.value, method = adj_p_val_method)
-      enrichment_results[[db]] = data
-  }
+    for (db in names(enrichment_results)) {
+        data = enrichment_results[[db]]
+        data$Adjusted.P.value = p.adjust(data$P.value, method = adj_p_val_method)
+        enrichment_results[[db]] = data
+    }
     if (!dir.exists("enrichr_results")) {
-      dir.create("enrichr_results")
-  }
-  for (db in names(enrichment_results)) {
-      output = paste0("enrichr_results/", db, ".csv")
-      write.csv(enrichment_results[[db]], file = output, row.names = FALSE)
-  }
+        dir.create("enrichr_results")
+    }
+    for (db in names(enrichment_results)) {
+        output = paste0("enrichr_results/", db, ".csv")
+        write.csv(enrichment_results[[db]], file = output, row.names = FALSE)
+    }
 
-  enrichment_results_combined = bind_rows(
-      lapply(names(enrichment_results), function(db) {
-          df = enrichment_results[[db]]
-          df$database = db
-          df })
-  )
+    enrichment_results_combined = bind_rows(
+        lapply(names(enrichment_results), function(db) {
+            df = enrichment_results[[db]]
+            df$database = db
+            df })
+    )
 
-  de_genes = unique(de_condition_filtered$gene_symbol)
+    de_genes = unique(de_condition_filtered$gene_symbol)
 
-  enrichr_results = filter(enrichment_results_combined, grepl(paste(de_genes, collapse="|"), Genes))
-  enrichr_results = enrichr_results[enrichr_results$Adjusted.P.value < adj_p_val_cutoff, ]
+    enrichr_results = filter(enrichment_results_combined, grepl(paste(de_genes, collapse="|"), Genes))
+    enrichr_results = enrichr_results[enrichr_results$Adjusted.P.value < adj_p_val_cutoff, ]
 
-  return(enrichr_results)
+    return(enrichr_results)
 }
 
 
@@ -376,7 +382,7 @@ find_enriched_pathways = function(seurat_obj = NULL, de_condition_filtered = NUL
 #' @param adj_p_val_method: method for p-value adjustments, default = "BH" 
 #' @return a list containing ligand–receptor interactions, DE genes, upregulated receptors, filtered interactions, intersected receptors, and pathway enrichment results.
 #' @export
-run_full_scSignalMap_pipeline = function(workingdir = "/files", seurat_obj = NULL, prep_SCT = TRUE, cond_column = NULL, cond_name1 = NULL, cond_name2 = NULL, celltype_column = NULL, celltype_name = NULL, sender_celltypes = NULL, receiver_celltypes = NULL, secreted_lig = TRUE, FC_cutoff = 0.3, adj_p_val_cutoff = 0.05, enrichr_databases = c("BioCarta_2016", "GO_Biological_Process_2025", "KEGG_2021_Human", "NCI-Nature_2016", "WikiPathways_2024_Human"), adj_p_val_method = "BH") {
+run_full_scSignalMap_pipeline = function(workingdir = "/files", seurat_obj = NULL, prep_SCT = TRUE, cond_column = NULL, cond_name1 = NULL, cond_name2 = NULL, celltype_column = NULL, celltype_name = NULL, sender_celltypes = NULL, receiver_celltypes = NULL, secreted_lig = TRUE, FC_cutoff = 0.3, adj_p_val_cutoff = 0.05, enrichr_databases = c("BioCarta_2016", "GO_Biological_Process_2025", "KEGG_2021_Human", "NCI-Nature_2016", "WikiPathways_2024_Human"), adj_p_val_method = "BH", ensdb = 'EnsDb.Hsapiens.v86', species='human') {
 
   #####################
   ### Run pipeline  ###
@@ -385,7 +391,9 @@ run_full_scSignalMap_pipeline = function(workingdir = "/files", seurat_obj = NUL
   setwd(workingdir)
   seurat_obj = readRDS(seurat_obj)
   seurat_obj$celltype = Idents(seurat_obj)
-  LR_interactions = MapInteractions(seurat_obj, 'celltype')
+  LR_interactions = MapInteractions(seurat_obj, 
+                                    group_by = celltype_column,
+                                    species=species)
 
   message("Finding DE genes...")
   de_cond_celltype = find_markers_btwn_cond_for_celltype(
@@ -397,7 +405,8 @@ run_full_scSignalMap_pipeline = function(workingdir = "/files", seurat_obj = NUL
       celltype_column = celltype_column,
       celltype_name = celltype_name,
       FC_cutoff = FC_cutoff,
-      adj_p_val_cutoff = adj_p_val_cutoff)
+      adj_p_val_cutoff = adj_p_val_cutoff,
+      ensdb = ensdb)
 
   message("Finding upregulated receptors...")
   upreg_receptors = find_upreg_receptors(
@@ -423,7 +432,8 @@ run_full_scSignalMap_pipeline = function(workingdir = "/files", seurat_obj = NUL
       de_condition_filtered = de_cond_celltype,
       enrichr_databases = enrichr_databases,
       adj_p_val_method = adj_p_val_method,
-      adj_p_val_cutoff = adj_p_val_cutoff)
+      adj_p_val_cutoff = adj_p_val_cutoff,
+      ensdb = ensdb)
 
   ###################################
   ### Return all results together ###
@@ -435,78 +445,4 @@ run_full_scSignalMap_pipeline = function(workingdir = "/files", seurat_obj = NUL
       interactions_filtered = interactions_filtered,
       upreg_receptors_filtered_and_compared = upreg_receptors_filtered_and_compared,
       enrichr_results = enrichr_results))
-}
-
-##' Create Master Interaction List
-#'
-#' This function creates master interaction list by combining DE ligands/receptors, Enrichr results, and scSignalMap interactions
-#'
-#' @param enrichr_results Data frame of Enrichr pathway enrichment results, default is results$enrichr_results 
-#' @param de_receptors Data frame of upregulated receptors, default is results$upreg_receptors_filtered_and_compared
-#' @param scSignalMap_data_filtered Data frame of filtered interactions, default is results$interactions_filtered
-#' @return A data frame containing merged ligand/receptor info, enrichment, and interaction data
-#' @export
-create_master_interaction_list = function(
-  enrichr_results = results$enrichr_results,
-  de_receptors = results$upreg_receptors_filtered_and_compared,
-  scSignalMap_data_filtered = results$interactions_filtered
-) {
-  
-  ## Step 1: Clean Enrichr results
-  enrichr_results = enrichr_results[, !(names(enrichr_results) %in% c("Old.P.value", "Old.Adjusted.P.value"))]
-  
-  # Expand genes column
-  expanded_enrichr = enrichr_results %>%
-    tidyr::separate_rows(Genes, sep = ";") %>%
-    dplyr::mutate(Genes = stringr::str_trim(Genes))
-  
-  # Find common genes
-  common_genes = intersect(unique(expanded_enrichr$Genes), unique(de_receptors$gene_symbol))
-  
-  # Filter Enrichr results to only include common genes
-  enrichr_results = enrichr_results %>%
-    dplyr::filter(sapply(Genes, function(x) {
-      any(stringr::str_trim(unlist(strsplit(x, ";"))) %in% common_genes)
-    }))
-  
-  # Filter DE receptors to only include common genes
-  de_receptors = de_receptors %>%
-    dplyr::filter(gene_symbol %in% common_genes)
-  
-  ## Step 2: Build master list with DE receptor info
-  master_list = de_receptors[, c("gene_symbol", "avg_log2FC", "p_val_adj")]
-  colnames(master_list)[colnames(master_list) == "gene_symbol"] = "Receptor_Symbol"
-  
-  # Prepare Enrichr info for merging
-  expanded_enrichr_subset = expanded_enrichr %>%
-    dplyr::select(Genes, Term, Adjusted.P.value) %>%
-    dplyr::rename(Receptor_Symbol = Genes, enrichr_p_val_adj = Adjusted.P.value)
-  
-  # Merge DE receptor info with Enrichr results
-  master_list = dplyr::left_join(master_list, expanded_enrichr_subset, by = "Receptor_Symbol")
-  
-  ## Step 3: Merge with scSignalMap interactions
-  master_list = merge(
-    master_list,
-    scSignalMap_data_filtered,
-    by.x = "Receptor_Symbol",
-    by.y = "Receptor_Symbol",
-    all.x = TRUE,
-    sort = FALSE
-  )
-  
-  # Clean up: remove rows without receptor info
-  master_list = master_list[!is.na(master_list$Receptor_Symbol), ]
-  
-  # Remove unwanted column "X" if it exists
-  if ("X" %in% colnames(master_list)) master_list$X = NULL
-  
-  # Reorder columns so receptor symbol/info come first
-  if ("Receptor" %in% colnames(master_list)) {
-    cols = colnames(master_list)
-    new_order = c("Receptor_Symbol", "Receptor", setdiff(cols, c("Receptor_Symbol", "Receptor")))
-    master_list = master_list[, new_order]
-  }
-  
-  return(master_list)
 }
