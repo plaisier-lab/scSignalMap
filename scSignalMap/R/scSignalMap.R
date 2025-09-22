@@ -199,7 +199,7 @@ find_markers_btwn_cond_for_celltype = function(seurat_obj = NULL, prep_SCT = FAL
 
     message("Filtering DE genes by log2FC and adjusted p-value...")
     de_cond_celltype = de_cells %>%
-                       filter((avg_log2FC >= FC_cutoff | avg_log2FC <= -FC_cutoff) & p_val_adj <= adj_p_val_cutoff)
+                       dplyr::filter((avg_log2FC >= FC_cutoff | avg_log2FC <= -FC_cutoff) & p_val_adj <= adj_p_val_cutoff)
 
     message("Adding gene symbols...")
     ensembl_ids = rownames(de_cond_celltype)
@@ -234,7 +234,7 @@ find_upreg_receptors = function(de_condition_filtered= NULL, FC_cutoff = 0.3) {
 
     message("Filter for upregulated receptors")
     upreg_receptors = de_condition_filtered %>%
-                      filter(ensembl_id %in% receptor_genes & avg_log2FC >= FC_cutoff)
+                      dplyr::filter(ensembl_id %in% receptor_genes & avg_log2FC >= FC_cutoff)
     upreg_receptors$gene_symbol = ensembl_to_symbol[upreg_receptors$ensembl_id]
 
     upreg_receptors = upreg_receptors[, c("gene_symbol", setdiff(names(upreg_receptors), "gene_symbol"))]  
@@ -259,13 +259,13 @@ filter_lr_interactions = function(interactions = NULL, sender_celltypes = NULL, 
       
       if (secreted_lig) {
           interactions_filtered = interactions %>%
-                                  filter(Ligand_secreted == TRUE,
+                                  dplyr::filter(Ligand_secreted == TRUE,
                                   Receiver %in% receiver_celltypes,
                                   Sender %in% sender_celltypes,
                                   Sender != Receiver)
       } else {
           interactions_filtered = interactions %>%
-                                  filter(Receiver %in% receiver_celltypes,
+                                  dplyr::filter(Receiver %in% receiver_celltypes,
                                   Sender %in% sender_celltypes,
                                   Sender != Receiver)
       }
@@ -291,7 +291,7 @@ intersect_upreg_receptors_with_lr_interactions = function(upreg_receptors = NULL
     message("Intersect upregulated receptors with filtered interactions")
 
     upreg_receptors_filtered_and_compared = upreg_receptors %>%
-                                            filter(gene_symbol %in% interactions$Receptor_Symbol)
+                                            dplyr::filter(gene_symbol %in% interactions$Receptor_Symbol)
 
 return(upreg_receptors_filtered_and_compared)
 }
@@ -349,7 +349,7 @@ find_enriched_pathways = function(seurat_obj = NULL, de_condition_filtered = NUL
 
     de_genes = unique(de_condition_filtered$gene_symbol)
 
-    enrichr_results = filter(enrichment_results_combined, grepl(paste(de_genes, collapse="|"), Genes))
+    enrichr_results = dplyr::filter(enrichment_results_combined, grepl(paste(de_genes, collapse="|"), Genes))
     enrichr_results = enrichr_results[enrichr_results$Adjusted.P.value < adj_p_val_cutoff, ]
 
     return(enrichr_results)
