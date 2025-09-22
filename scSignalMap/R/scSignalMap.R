@@ -32,8 +32,8 @@
 MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_adj_lte = 0.05, min_pct = 0.1, species='human', gene_id='ensembl') {
     cat('Running scSignalMap:\n')
 
+    
     ## Step 1. Load up the data
-
     cat('  Loading data...\n')
     # Load MultiNicheNet ligand receptor interactions
     lr_network = read.csv(system.file('extdata', 'lr_network.csv', package='scSignalMap'), header=TRUE)
@@ -50,7 +50,6 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     secreted = read.csv(system.file('extdata', 'secreted.csv', package='scSignalMap'), header=TRUE)
     colnames(secreted)[1] = 'human_ensembl'
     secreted_ligands = na.omit(secreted[,paste(species,gene_id,sep='_')])
-    cat(2)
 
 
     ## Step 2. Identify marker genes
@@ -59,7 +58,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     putative_markers = FindAllMarkers(seurat_obj, group.by=group_by, min.pct=min_pct, verbose=T)
     markers = list()
     for(clust1 in as.character(sort(unique(seurat_obj@meta.data[,group_by])))) {
-        markers[[clust1]] = putative_markers %>% filter(cluster==clust1 & avg_log2FC>=avg_log2FC_gte & p_val_adj<=p_val_adj_lte) %>% pull(name='gene')
+        markers[[clust1]] = putative_markers %>% dplyr::filter(cluster==clust1 & avg_log2FC>=avg_log2FC_gte & p_val_adj<=p_val_adj_lte) %>% dplyr::pull(name='gene')
         #cat(paste0('    ',cluster1,': ',length(markers[[cluster1]]),'\n'))
     }
 
