@@ -183,10 +183,10 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
 #' @export
 find_markers_btwn_cond_for_celltype = function(seurat_obj = NULL, prep_SCT = FALSE, cond_column = NULL, cond_name1 = NULL, cond_name2 = NULL, celltype_column = NULL, celltype_name = NULL, FC_cutoff = 0.3, adj_p_val_cutoff = 0.05, ensdb = 'EnsDb.Hsapiens.v86') {
 
-    message("Preparing to run FindMarkers...")
-    if(prep_SCT==TRUE) {
-        seurat_obj = PrepSCTFindMarkers(seurat_obj)
-    }
+    #message("Preparing to run FindMarkers...")
+    #if(prep_SCT==TRUE) {
+    #    seurat_obj = PrepSCTFindMarkers(seurat_obj)
+    #}
 
     message("Subsetting and setting identities...")
     cells_to_keep = rownames(seurat_obj@meta.data)[seurat_obj@meta.data[,celltype_column] == celltype_name]
@@ -194,6 +194,7 @@ find_markers_btwn_cond_for_celltype = function(seurat_obj = NULL, prep_SCT = FAL
     Idents(subset_cells) = subset_cells@meta.data[,cond_column]
 
     message("Running FindMarkers...")
+    subset_cells = PrepSCTFindMarkers(subset_cells)
     de_cells = FindMarkers(subset_cells, ident.1 = cond_name1, ident.2 = cond_name2)
 
     message("Filtering DE genes by log2FC and adjusted p-value...")
