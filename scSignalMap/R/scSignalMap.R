@@ -377,15 +377,15 @@ find_enriched_pathways = function(seurat_obj = NULL, de_condition_filtered = NUL
 #' @param adj_p_val_method: method for p-value adjustments, default = "BH" 
 #' @return a list containing ligand–receptor interactions, DE genes, upregulated receptors, filtered interactions, intersected receptors, and pathway enrichment results.
 #' @export
-run_full_scSignalMap_pipeline = function(workingdir = "/files", seurat_obj = NULL, prep_SCT = TRUE, cond_column = NULL, cond_name1 = NULL, cond_name2 = NULL, celltype_column = NULL, celltype_name = NULL, sender_celltypes = NULL, receiver_celltypes = NULL, secreted_lig = TRUE, FC_cutoff = 0.3, adj_p_val_cutoff = 0.05, enrichr_databases = c("BioCarta_2016", "GO_Biological_Process_2025", "KEGG_2021_Human", "NCI-Nature_2016", "WikiPathways_2024_Human"), adj_p_val_method = "BH", ensdb = 'EnsDb.Hsapiens.v86', species='human') {
+run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, cond_column = NULL, cond_name1 = NULL, cond_name2 = NULL, celltype_column = NULL, celltype_name = NULL, sender_celltypes = NULL, receiver_celltypes = NULL, secreted_lig = TRUE, FC_cutoff = 0.3, adj_p_val_cutoff = 0.05, enrichr_databases = c("BioCarta_2016", "GO_Biological_Process_2025", "KEGG_2021_Human", "NCI-Nature_2016", "WikiPathways_2024_Human"), adj_p_val_method = "BH", ensdb = 'EnsDb.Hsapiens.v86', species='human') {
 
   #####################
   ### Run pipeline  ###
   #####################
   message("Running MapInteractions...")
-  setwd(workingdir)
-  seurat_obj = readRDS(seurat_obj)
-  seurat_obj$celltype = Idents(seurat_obj)
+  #setwd(workingdir)
+  #seurat_obj = readRDS(seurat_obj)
+  #seurat_obj$celltype = Idents(seurat_obj)
   LR_interactions = MapInteractions(seurat_obj, 
                                     group_by = celltype_column,
                                     species=species)
