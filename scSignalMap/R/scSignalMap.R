@@ -32,12 +32,16 @@
 MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_adj_lte = 0.05, min_pct = 0.1, species='human', gene_id='ensembl') {
     cat('Running scSignalMap:\n')
 
+    cat(species)
+    cat(gene_id)
+
     ## Step 1. Load up the data
 
     cat('  Loading data...\n')
     # Load MultiNicheNet ligand receptor interactions
     lr_network = read.csv(system.file('extdata', 'lr_network.csv', package='scSignalMap'), header=TRUE)
     lr_pairs = na.omit(lr_network[,c(paste('ligand',species,gene_id,sep='_'),paste('receptor',species,gene_id,sep='_'))])
+    cat(1)
     if(gene_id!='symbol') {
         lig_convert = lr_network[,c(paste('ligand',species,'symbol',sep='_'))]
         names(lig_convert) = lr_network[,c(paste('ligand',species,gene_id,sep='_'))]
@@ -48,6 +52,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     # Load up secreted ligands
     secreted = read.csv(system.file('extdata', 'secreted.csv', package='scSignalMap'), header=TRUE)
     secreted_ligands = na.omit(secreted[,paste(species,gene_id,sep='_')])
+    cat(2)
 
 
     ## Step 2. Identify marker genes
@@ -360,7 +365,6 @@ find_enriched_pathways = function(seurat_obj = NULL, de_condition_filtered = NUL
 #' differential expression analysis, receptor filtering, receptor–ligand 
 #' intersection, and pathway enrichment analysis in one workflow.  
 #'
-#' @param workingdir: working directory where results will be saved, default is "/files"
 #' @param seurat_obj: seurat object containing scRNA-seq data
 #' @param prep_SCT: logical; whether to run PrepSCTFindMarkers before differential expression, default = TRUE
 #' @param cond_column: meta.data column in Seurat object containing condition labels
@@ -383,9 +387,6 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
   ### Run pipeline  ###
   #####################
   message("Running MapInteractions...")
-  #setwd(workingdir)
-  #seurat_obj = readRDS(seurat_obj)
-  #seurat_obj$celltype = Idents(seurat_obj)
   LR_interactions = MapInteractions(seurat_obj, 
                                     group_by = celltype_column,
                                     species=species)
