@@ -47,7 +47,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     }
 
     # Load up secreted ligands
-    secreted = read.csv(system.file('extdata', 'secreted.csv', package='scSignalMap'), header=TRUE, row.names=1)
+    secreted = read.csv(system.file('extdata', 'secreted.csv', package='scSignalMap'), header=TRUE)
     secreted_ligands = na.omit(secreted[,paste(species,gene_id,sep='_')])
     cat(2)
 
