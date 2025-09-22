@@ -204,10 +204,11 @@ find_markers_btwn_cond_for_celltype = function(seurat_obj = NULL, prep_SCT = FAL
     message("Adding gene symbols...")
     ensembl_ids = rownames(de_cond_celltype)
     
-    gene_symbols = AnnotationDbi::select(eval(parse(text=ensdb)), keys = ensembl_ids, keytype = "GENEID", columns = c("SYMBOL"), multiVals='first')
+    gene_symbols = AnnotationDbi::select(eval(parse(text=ensdb)), keys = ensembl_ids, keytype = "GENEID", columns = c("SYMBOL"), multiVals='asNA')
+    rownames(gene_symbols) = gene_symbols[,'GENEID']
 
     de_cond_celltype = data.frame(ensembl_id = ensembl_ids,
-                                  gene_symbol = gene_symbols,
+                                  gene_symbol = gene_symbols[ensembl_ids,'SYMBOL'],
                                   de_cond_celltype,
                                   stringsAsFactors = FALSE)
 
