@@ -233,7 +233,7 @@ find_upreg_receptors = function(de_condition_filtered= NULL, FC_cutoff = 0.3, sp
     lr_network = read.csv(system.file('extdata', 'lr_network.csv', package='scSignalMap'), header=TRUE)
     receptor_ensembl = lr_network[,paste('ligand',species,'ensembl',sep='_')]
     receptor_symbol = lr_network[,paste('ligand',species,'ensembl',sep='_')]
-    receptor_gene = unique(na.omit(receptor_ensembl))
+    receptor_genes = unique(na.omit(receptor_ensembl))
     ensembl_to_symbol = setNames(receptor_symbol, receptor_ensembl)
 
     message("Filter for upregulated receptors")
