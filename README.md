@@ -18,7 +18,7 @@
 
  ## Requirements and Dependencies
 scSignalMap usage requires R packages:
-`scSignalMap, Seurat, enrichR, dplyr, tidyr, stringr, org.Hs.eg.db, AnnotationDbi, fastmatch, and data.table` to run the full pipline. 
+`scSignalMap, Seurat, enrichR, dplyr, tidyr, stringr, EnsDb.Hsapiens.v86, AnnotationDbi, fastmatch, and data.table` to run the full pipline. 
  ## Installation
 Installation of scSignalMap in R is accomplished by:
 ```r
@@ -34,7 +34,7 @@ Below is an example of inputs for `run_full_scSignalMap_pipeline`:
 ```r
 results = run_full_scSignalMap_pipeline(
 workingdir = "/files", 
-seurat_obj = 'seurat_objects/MN_big_int.rds', 
+seurat_obj = seurat_obj, 
 prep_SCT = TRUE, 
 cond_column = "orig.ident",
 cond_name1 = "MN2", 
