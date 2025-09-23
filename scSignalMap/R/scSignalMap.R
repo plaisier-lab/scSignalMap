@@ -226,12 +226,15 @@ find_markers_btwn_cond_for_celltype = function(seurat_obj = NULL, prep_SCT = FAL
 #' @param FC_cutoff: desired cutoff for log2FC values using >= the absolute value, default is 0.3
 #' @return A dataframe with identified DE genes and their log2FC from previously chosen condition
 #' @export
-find_upreg_receptors = function(de_condition_filtered= NULL, FC_cutoff = 0.3) {
+find_upreg_receptors = function(de_condition_filtered= NULL, FC_cutoff = 0.3, species = 'human') {
 
     message("Loading ligand-receptor information")
-    lr_list = read.csv(system.file('extdata', 'lr_network.csv', package='scSignalMap'))
-    receptor_genes = unique(na.omit(lr_list$receptor_human_ensembl))
-    ensembl_to_symbol = setNames(lr_list$receptor_human_symbol, lr_list$receptor_human_ensembl)
+    # Load MultiNicheNet ligand receptor interactions
+    lr_network = read.csv(system.file('extdata', 'lr_network.csv', package='scSignalMap'), header=TRUE)
+    receptor_ensembl = lr_network[,paste('ligand',species,'ensembl',sep='_')]
+    receptor_symbol = lr_network[,paste('ligand',species,'ensembl',sep='_')]
+    receptor_gene = unique(na.omit(receptor_ensembl))
+    ensembl_to_symbol = setNames(receptor_symbol, receptor_receptor)
 
     message("Filter for upregulated receptors")
     upreg_receptors = de_condition_filtered %>%
@@ -406,7 +409,7 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
   message("Finding upregulated receptors...")
   upreg_receptors = find_upreg_receptors(
       de_condition_filtered = de_cond_celltype,
-      FC_cutoff = FC_cutoff)
+      FC_cutoff = FC_cutoff, species=species)
 
   message("Filtering LR interactions...")
   interactions_filtered = filter_lr_interactions(
