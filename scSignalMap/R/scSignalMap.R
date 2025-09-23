@@ -195,7 +195,7 @@ find_markers_btwn_cond_for_celltype = function(seurat_obj = NULL, prep_SCT = FAL
 
     message("Running FindMarkers...")
     subset_cells = PrepSCTFindMarkers(subset_cells)
-    de_cells = FindMarkers(subset_cells, ident.1 = cond_name1, ident.2 = cond_name2, recorrect_umi=False)
+    de_cells = FindMarkers(subset_cells, ident.1 = cond_name1, ident.2 = cond_name2, recorrect_umi = FALSE)
 
     message("Filtering DE genes by log2FC and adjusted p-value...")
     de_cond_celltype = de_cells %>%
