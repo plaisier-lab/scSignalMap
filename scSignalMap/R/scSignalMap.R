@@ -234,7 +234,7 @@ find_upreg_receptors = function(de_condition_filtered= NULL, FC_cutoff = 0.3, sp
     receptor_ensembl = lr_network[,paste('ligand',species,'ensembl',sep='_')]
     receptor_symbol = lr_network[,paste('ligand',species,'ensembl',sep='_')]
     receptor_gene = unique(na.omit(receptor_ensembl))
-    ensembl_to_symbol = setNames(receptor_symbol, receptor_receptor)
+    ensembl_to_symbol = setNames(receptor_symbol, receptor_ensembl)
 
     message("Filter for upregulated receptors")
     upreg_receptors = de_condition_filtered %>%
