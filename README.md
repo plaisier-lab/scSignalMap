@@ -18,18 +18,33 @@
 
  ## Requirements and Dependencies
 scSignalMap usage requires R packages:
-`scSignalMap, Seurat, enrichR, dplyr, tidyr, stringr, EnsDb.Hsapiens.v86, AnnotationDbi, fastmatch, and data.table` to run the full pipline. 
+`scSignalMap, Seurat, enrichR, dplyr, tidyr, stringr, EnsDb.Hsapiens.v86, AnnotationDbi, fastmatch, and data.table` to run the full pipline. Installation can be done using:
+
+```r
+install.packages(c('scSignalMap', 'Seurat', 'enrichR', 'dplyr', 'tidyr', 'stringr', 'EnsDb.Hsapiens.v86', 'AnnotationDbi', 'fastmatch', 'data.table'))
+```
+
  ## Installation
 Installation of scSignalMap in R is accomplished by:
 ```r
 remotes::install_github("plaisier-lab/scSignalMap/scSignalMap")
 ```
 ## Dockerfile and Image
+For those who are interested we also provide a Dockerfile and image that include all depdencies:
+Command to pull the image down:
 
+```r
+docker pull cplaisier/quadculture
+```
+Command to run the docker image. Note that the should be replaced with the path to your files that you want to be mounted onto the docker instance. The files can then be found in /files on the instance and locally on your computer in the path specified.
+
+```r
+docker run -it -v '<replace with the location for your files>:/files' cplaisier/quadculture
+```
 ## Running scSignalMap
 >The scSignalMap pipeline is performed through one function, `run_full_scSignalMap_pipeline()` and an optional function, `create_master_interaction_list`, that creates a master list of scSignalMap outputs.
 
-Below is an example of inputs for `run_full_scSignalMap_pipeline`:
+Below is an example of inputs for the `run_full_scSignalMap_pipeline` function:
 
 ```r
 results = run_full_scSignalMap_pipeline(
@@ -53,7 +68,7 @@ enrichr_databases = c("BioCarta_2016",
 		    "WikiPathways_2024_Human"), 
 adj_p_val_method = "BH")
 ```
-Below is an example of inputs for `create_master_interaction_list`:
+Below is an example of inputs for the `create_master_interaction_list` function:
 
 ```r
 master_interaction_list = create_master_interaction_list(
