@@ -318,24 +318,28 @@ return(upreg_receptors_filtered_and_compared)
 #' @export
 find_enriched_pathways = function(seurat_obj = NULL, de_condition_filtered = NULL, enrichr_databases = c("BioCarta_2016", "GO_Biological_Process_2025", "KEGG_2021_Human", "NCI-Nature_2016", "WikiPathways_2024_Human"), adj_p_val_method = "BH", adj_p_val_cutoff = 0.05, ensdb = 'EnsDb.Hsapiens.v86') {
 
+    # Get a list of genes for functional enrichment
     genes = unique(as.character(de_condition_filtered$gene_symbol))
 
+    # Named list to convert gene names
+    convert_me = genes
+    names(convert_me) = toupper(genes)
+
+    # Generate a background gene list based on all genes in Seurat object
     background_genes = rownames(seurat_obj[["RNA"]])
-    #### TODO ### - remove later
-    #background_genes = mapIds(org.Hs.eg.db, 
-    #                          keys = background_genes, 
-    #                          column = "SYMBOL", 
-    #                          keytype = "ENSEMBL", 
-    #                          multiVals = "first")
     background_genes = AnnotationDbi::select(eval(parse(text=ensdb)), keys = background_genes, keytype = "GENEID", columns = c("SYMBOL"))
 
+    # Conduct enrichment analysis using Enrichr
     enrichment_results = enrichR::enrichr(genes, enrichr_databases, background = background_genes[,'SYMBOL'])
 
+    # Add adjusted p-value
     for (db in names(enrichment_results)) {
         data = enrichment_results[[db]]
         data$Adjusted.P.value = p.adjust(data$P.value, method = adj_p_val_method)
         enrichment_results[[db]] = data
     }
+
+    # Make enrichment results directory and save our files for each database tested
     if (!dir.exists("enrichr_results")) {
         dir.create("enrichr_results")
     }
@@ -344,6 +348,7 @@ find_enriched_pathways = function(seurat_obj = NULL, de_condition_filtered = NUL
         write.csv(enrichment_results[[db]], file = output, row.names = FALSE)
     }
 
+    # Combine the enrichr results for all databases
     enrichment_results_combined = bind_rows(
         lapply(names(enrichment_results), function(db) {
             df = enrichment_results[[db]]
@@ -351,12 +356,8 @@ find_enriched_pathways = function(seurat_obj = NULL, de_condition_filtered = NUL
             df })
     )
 
-    de_genes = unique(de_condition_filtered$gene_symbol)
-
-    #enrichr_results = dplyr::filter(enrichment_results_combined, grepl(paste(de_genes, collapse="|"), Genes))
-    e2 = enrichment_results_combined %>% mutate(tmp = strsplit(Genes, ";"))
-    e3 = sapply(rownames(e2), function(x) { length(intersect(e2[x, "tmp"][[1]], de_genes))>0 })
-    enrichr_results = enrichment_results_combined[e3,]
+    # Rename the Genes so they are correct for mouse, and shouldn't hurt human
+    enrichr_results = enrichment_results_combined %>% mutate(tmp = paste(convert_me[strsplit(Genes, ";")[[1]]], collapse=';'))
     enrichr_results = enrichr_results[enrichr_results$Adjusted.P.value < adj_p_val_cutoff, ]
 
     return(enrichr_results)
