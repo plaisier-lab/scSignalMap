@@ -74,10 +74,12 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     lr_pairs = lr_pairs[lr_pairs[,2] %fin% allgenes,]
 
     # Split up the seurat object by groups
-    seurat_obj_split = SplitObject(seurat_obj, split.by=group_by)
+    Idents(seurat_obj) = cond_column
+    seurat_obj_cond1 = Subset(seurat_obj, idents = cond_name1)
+    seurat_obj_split = SplitObject(seurat_obj_cond1, split.by=group_by)
 
     # Build a data.table with statistics
-    all_dt = rbindlist(lapply(as.character(sort(unique(seurat_obj@meta.data[,group_by]))), function(clust1) {
+    all_dt = rbindlist(lapply(as.character(sort(unique(seurat_obj_cond1@meta.data[,group_by]))), function(clust1) {
                  mat = as.matrix(seurat_obj_split[[clust1]]@assays$RNA@layers$counts)
                  genes = rownames(seurat_obj_split[[clust1]]@assays$RNA)
                  n_cells = ncol(mat)
@@ -100,7 +102,7 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
     
     
     # All sender/receiver combinations
-    clusts = as.character(sort(unique(seurat_obj@meta.data[[group_by]])))
+    clusts = as.character(sort(unique(seurat_obj_cond1@meta.data[[group_by]])))
     clust_dt = data.table::CJ(Sender = clusts, Receiver = clusts)  # Cartesian product
 
     # Ligand-Receptor pairs table
