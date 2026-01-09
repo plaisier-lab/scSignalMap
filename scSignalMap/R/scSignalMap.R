@@ -29,7 +29,7 @@
 #' @param gene_id: what type of gene ID is used, either 'ensembl' or 'symbol', defaults to 'ensembl'
 #' @return data.frame with putative interactions
 #' @export
-MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_adj_lte = 0.05, min_pct = 0.1, species='human', gene_id='ensembl') {
+MapInteractions = function(seurat_obj, group_by, cond_column, avg_log2FC_gte = 0.25, p_val_adj_lte = 0.05, min_pct = 0.1, species='human', gene_id='ensembl') {
     cat('Running scSignalMap:\n')
 
     
@@ -397,6 +397,7 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
   message("Running MapInteractions...")
   LR_interactions = MapInteractions(seurat_obj, 
                                     group_by = celltype_column,
+                                    cond_column = cond_column,
                                     species=species)
 
   message("Finding DE genes...")
