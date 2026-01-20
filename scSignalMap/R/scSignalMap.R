@@ -185,19 +185,18 @@ MapInteractions = function(seurat_obj, group_by, avg_log2FC_gte = 0.25, p_val_ad
 #' @export
 find_markers_btwn_cond_for_celltype = function(seurat_obj = NULL, prep_SCT = FALSE, cond_column = NULL, cond_name1 = NULL, cond_name2 = NULL, celltype_column = NULL, celltype_name = NULL, FC_cutoff = 0.3, adj_p_val_cutoff = 0.05, ensdb = 'EnsDb.Hsapiens.v86') {
 
-    #message("Preparing to run FindMarkers...")
-    #if(prep_SCT==TRUE) {
-    #    seurat_obj = PrepSCTFindMarkers(seurat_obj)
-    #}
+    message("Preparing to run FindMarkers...")
+    if(prep_SCT==TRUE) {
+        seurat_obj = PrepSCTFindMarkers(seurat_obj)
+    }
+    seurat_obj = PrepSCTFindMarkers(seurat_obj)
 
     message("Subsetting and setting identities...")
-    cells_to_keep = rownames(seurat_obj@meta.data)[seurat_obj@meta.data[,celltype_column] == celltype_name]
-    subset_cells = subset(seurat_obj, cells = cells_to_keep)
-    Idents(subset_cells) = subset_cells@meta.data[,cond_column]
+    cells.1 = rownames(seurat_obj@meta.data %>% dplyr::filter(!!sym(celltype_column) == celltype_name & sample == cond_name1))
+    cells.2 = rownames(seurat_obj@meta.data %>% dplyr::filter(!!sym(celltype_column) == celltype_name & sample == cond_name2))
 
     message("Running FindMarkers...")
-    subset_cells = PrepSCTFindMarkers(subset_cells)
-    de_cells = FindMarkers(subset_cells, ident.1 = cond_name1, ident.2 = cond_name2, recorrect_umi = FALSE)
+    de_cells = FindMarkers(seurat_obj, ident.1=cells.1, ident.2=cells.2)
 
     message("Filtering DE genes by log2FC and adjusted p-value...")
     de_cond_celltype = de_cells %>%
@@ -469,58 +468,38 @@ create_master_interaction_list = function(
   ## Step 1: Clean Enrichr results
   enrichr_results = enrichr_results[, !(names(enrichr_results) %in% c("Old.P.value", "Old.Adjusted.P.value"))]
   
-  # Expand genes column
-  expanded_enrichr = enrichr_results %>%
-    tidyr::separate_rows(Genes, sep = ";") %>%
-    dplyr::mutate(Genes = stringr::str_trim(Genes))
-  
-  # Find common genes
-  common_genes = intersect(unique(expanded_enrichr$Genes), unique(de_receptors$gene_symbol))
-  
-  # Filter Enrichr results to only include common genes
-  enrichr_results = enrichr_results %>%
-    dplyr::filter(sapply(Genes, function(x) {
-      any(stringr::str_trim(unlist(strsplit(x, ";"))) %in% common_genes)
-    }))
-  
-  # Filter DE receptors to only include common genes
-  de_receptors = de_receptors %>%
-    dplyr::filter(gene_symbol %in% common_genes)
-  
-  ## Step 2: Build master list with DE receptor info
-  master_list = de_receptors[, c("gene_symbol", "avg_log2FC", "p_val_adj")]
-  colnames(master_list)[colnames(master_list) == "gene_symbol"] = "Receptor_Symbol"
-  
-  # Prepare Enrichr info for merging
-  expanded_enrichr_subset = expanded_enrichr %>%
-    dplyr::select(Genes, Term, Adjusted.P.value) %>%
-    dplyr::rename(Receptor_Symbol = Genes, enrichr_p_val_adj = Adjusted.P.value)
-  
-  # Merge DE receptor info with Enrichr results
-  master_list = dplyr::left_join(master_list, expanded_enrichr_subset, by = "Receptor_Symbol")
-  
-  ## Step 3: Merge with scSignalMap interactions
-  master_list = merge(
-    master_list,
-    scSignalMap_data_filtered,
-    by.x = "Receptor_Symbol",
-    by.y = "Receptor_Symbol",
-    all.x = TRUE,
-    sort = FALSE
-  )
-  
-  # Clean up: remove rows without receptor info
-  master_list = master_list[!is.na(master_list$Receptor_Symbol), ]
-  
-  # Remove unwanted column "X" if it exists
-  if ("X" %in% colnames(master_list)) master_list$X = NULL
-  
-  # Reorder columns so receptor symbol/info come first
-  if ("Receptor" %in% colnames(master_list)) {
-    cols = colnames(master_list)
-    new_order = c("Receptor_Symbol", "Receptor", setdiff(cols, c("Receptor_Symbol", "Receptor")))
-    master_list = master_list[, new_order]
+  # Break appart the genes
+  genes = sapply(enrichr_results$Genes, function(x) { strsplit(x,';')[[1]] })
+  names(genes) = enrichr_results$Term
+
+  # Filtering down to terms
+  matched = list()
+  for(term1 in names(genes)) {
+      intersect1 = intersect(genes[[term1]],unique(de_receptors$gene_symbol))
+      if(length(intersect1)>0) {
+          matched[[term1]] = intersect1
+      }
   }
+  
+  # Make the master list
+  master_list = vector("list", length = 0)
+  for (term1 in names(matched)) {
+    cur_term_df = enrichr_results %>%
+      dplyr::filter(Term == term1)
+    for (rec1 in matched[[term1]]) {
+      rec1_df = scSignalMap_data_filtered %>%
+        dplyr::filter(Receptor_Symbol == rec1)
+      if (nrow(rec1_df) > 0) {
+        combined_df = bind_cols(
+          cur_term_df[rep(1, nrow(rec1_df)), ],
+          rec1_df
+        )
+        master_list[[length(master_list) + 1]] = combined_df
+      }
+    }
+  }
+
+  master_list = bind_rows(master_list)
   
   return(master_list)
 }
