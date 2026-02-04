@@ -526,7 +526,6 @@ create_master_interaction_list = function(
     }
 
     # Make the master list
-    de_receptors[,'Feedback'] = ifelse(de_receptors[,'avg_log2FC']>0, 'Amplification','Adaptation')
     master_list = vector("list", length = 0)
     for (term1 in names(matched)) {
         cur_term_df = enrichr_results %>%
