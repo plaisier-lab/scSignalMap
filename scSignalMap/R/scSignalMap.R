@@ -535,7 +535,7 @@ create_master_interaction_list = function(
             deg_res = de_receptors %>%
               dplyr::filter(gene_symbol == rec1)
             if (nrow(rec1_df) > 0) {
-                combined_df = bind_cols(cur_term_df[rep(1, nrow(rec1_df)), ], rec1_df, deg_res[,c('p_val','p_val_adj','avg_log2FC','pct.1','pct.2')])
+                combined_df = bind_cols(cur_term_df[rep(1, nrow(rec1_df)), ], rec1_df, deg_res[,c('p_val','p_val_adj','avg_log2FC','pct.1','pct.2')], [Feedback=ifelse(deg_res['avg_log2FC',]>0, 'Amplification','Adaptation')])
                 master_list[[length(master_list) + 1]] = combined_df
             }
         }
