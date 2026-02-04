@@ -505,13 +505,13 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
 #' This function creates master interaction list by combining DE ligands/receptors, Enrichr results, and scSignalMap interactions
 #'
 #' @param enrichr_results Data frame of Enrichr pathway enrichment results, default is results$enrichr_results 
-#' @param de_receptors Data frame of upregulated receptors, default is results$upreg_receptors_filtered_and_compared
+#' @param de_receptors Data frame of up- and down-regulated receptors, default is results$combined_receptors_filtered_and_compared
 #' @param scSignalMap_data_filtered Data frame of filtered interactions, default is results$interactions_filtered
 #' @return A data frame containing merged ligand/receptor info, enrichment, and interaction data
 #' @export
 create_master_interaction_list = function(
   enrichr_results = results$enrichr_results,
-  de_receptors = results$upreg_receptors_filtered_and_compared,
+  de_receptors = results$combined_receptors_filtered_and_compared,
   scSignalMap_data_filtered = results$interactions_filtered) {
 
     ## Step 1: Clean Enrichr results
