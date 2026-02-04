@@ -16,6 +16,8 @@
 ## If this program is used in your analysis please              ##
 ## mention who built it. Thanks. :-)                            ##
 ##################################################################
+
+
 #' Capturing signaling pathways using scRNA-seq data
 #'
 #' Function to capture signaling pathways using scRNA-seq data.
@@ -23,6 +25,8 @@
 #'
 #' @param seurat_obj: a seurat object must be supplied to classify, no default
 #' @param group_by: a meta_data column that will be used to split the cells, no default
+#' @param cond_column: meta.data column name for condition information 
+#' @param cond_name1: condition column value that compared to cond_name2 for differential expression analysis, must be specified
 #' @param avg_log2FC_gte: 
 #' @param p_val_adj_lte: 
 #' @param species: from which species did the samples originate, either 'human' or 'mouse', defaults to 'human'
@@ -31,8 +35,8 @@
 #' @export
 MapInteractions = function(seurat_obj, group_by, cond_column, cond_name1, avg_log2FC_gte = 0.25, p_val_adj_lte = 0.05, min_pct = 0.1, species='human', gene_id='ensembl') {
     cat('Running scSignalMap:\n')
-
     
+
     ## Step 1. Load up the data
     cat('  Loading data...\n')
     # Load MultiNicheNet ligand receptor interactions
@@ -58,7 +62,7 @@ MapInteractions = function(seurat_obj, group_by, cond_column, cond_name1, avg_lo
     putative_markers = FindAllMarkers(seurat_obj, group.by=group_by, min.pct=min_pct, verbose=T)
     markers = list()
     for(clust1 in as.character(sort(unique(seurat_obj@meta.data[,group_by])))) {
-        markers[[clust1]] = putative_markers %>% dplyr::filter(cluster==clust1 & avg_log2FC>=avg_log2FC_gte & p_val_adj<=p_val_adj_lte) %>% dplyr::pull(name='gene')
+        markers[[clust1]] = putative_markers %>% dplyr::filter(cluster==clust1 & abs(avg_log2FC)>=avg_log2FC_gte & p_val_adj<=p_val_adj_lte) %>% dplyr::pull(name='gene')
         #cat(paste0('    ',cluster1,': ',length(markers[[cluster1]]),'\n'))
     }
 
@@ -192,15 +196,15 @@ find_markers_btwn_cond_for_celltype = function(seurat_obj = NULL, prep_SCT = FAL
     seurat_obj = PrepSCTFindMarkers(seurat_obj)
 
     message("Subsetting and setting identities...")
-    cells.1 = rownames(seurat_obj@meta.data %>% dplyr::filter({{celltype_column}} == celltype_name & sample == cond_name1))
-    cells.2 = rownames(seurat_obj@meta.data %>% dplyr::filter({{celltype_column}} == celltype_name & sample == cond_name2))
+    cells.1 = rownames(seurat_obj@meta.data %>% dplyr::filter((!!sym(celltype_column) == celltype_name) & (!!sym(cond_column) == cond_name1)))
+    cells.2 = rownames(seurat_obj@meta.data %>% dplyr::filter((!!sym(celltype_column) == celltype_name) & (!!sym(cond_column) == cond_name2)))
 
     message("Running FindMarkers...")
     de_cells = FindMarkers(seurat_obj, ident.1=cells.1, ident.2=cells.2)
 
     message("Filtering DE genes by log2FC and adjusted p-value...")
     de_cond_celltype = de_cells %>%
-                       dplyr::filter((avg_log2FC >= FC_cutoff | avg_log2FC <= -FC_cutoff) & p_val_adj <= adj_p_val_cutoff)
+                       dplyr::filter((abs(avg_log2FC) >= FC_cutoff) & (p_val_adj <= adj_p_val_cutoff))
 
     message("Adding gene symbols...")
     ensembl_ids = rownames(de_cond_celltype)
