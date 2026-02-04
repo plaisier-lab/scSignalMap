@@ -192,8 +192,8 @@ find_markers_btwn_cond_for_celltype = function(seurat_obj = NULL, prep_SCT = FAL
     seurat_obj = PrepSCTFindMarkers(seurat_obj)
 
     message("Subsetting and setting identities...")
-    cells.1 = rownames(seurat_obj@meta.data %>% dplyr::filter(!!sym(celltype_column) == celltype_name & sample == cond_name1))
-    cells.2 = rownames(seurat_obj@meta.data %>% dplyr::filter(!!sym(celltype_column) == celltype_name & sample == cond_name2))
+    cells.1 = rownames(seurat_obj@meta.data %>% dplyr::filter({{celltype_column}} == celltype_name & sample == cond_name1))
+    cells.2 = rownames(seurat_obj@meta.data %>% dplyr::filter({{celltype_column}} == celltype_name & sample == cond_name2))
 
     message("Running FindMarkers...")
     de_cells = FindMarkers(seurat_obj, ident.1=cells.1, ident.2=cells.2)
