@@ -33,7 +33,7 @@
 #' @param gene_id: what type of gene ID is used, either 'ensembl' or 'symbol', defaults to 'ensembl'
 #' @return data.frame with putative interactions
 #' @export
-MapInteractions = function(seurat_obj, group_by, cond_column, cond_name1, avg_log2FC_gte = 0.25, p_val_adj_lte = 0.05, min_pct = 0.1, species='human', gene_id='ensembl') {
+map_interactions = function(seurat_obj, group_by, cond_column, cond_name1, avg_log2FC_gte = 0.25, p_val_adj_lte = 0.05, min_pct = 0.1, species='human', gene_id='ensembl') {
     cat('Running scSignalMap:\n')
     
 
@@ -223,7 +223,7 @@ find_markers_btwn_cond_for_celltype = function(seurat_obj = NULL, prep_SCT = FAL
 }
 
 
-##' Identify upregulated receptors
+##' Identify up-regulated receptors
 #'
 #' This function identifies upregualted receptors from a given DE gene table using a chosen log2FC cutoff
 #'
@@ -249,6 +249,35 @@ find_upreg_receptors = function(de_condition_filtered= NULL, FC_cutoff = 0.3, sp
     upreg_receptors = upreg_receptors[, c("gene_symbol", setdiff(names(upreg_receptors), "gene_symbol"))]  
 
     return(upreg_receptors)
+}
+
+
+##' Identify down-regulated receptors
+#'
+#' This function identifies down-regualted receptors from a given DE gene table using a chosen log2FC cutoff
+#'
+#' @param de_condition_filtered: differentially expressed genes output from find_markers_btwn_cond_for_celltype function
+#' @param FC_cutoff: desired cutoff for log2FC values using <= the absolute value, default is 0.3
+#' @return A dataframe with identified DE genes and their log2FC from previously chosen condition
+#' @export
+find_downreg_receptors = function(de_condition_filtered= NULL, FC_cutoff = 0.3, species = 'human') {
+
+    message("Loading ligand-receptor information")
+    # Load MultiNicheNet ligand receptor interactions
+    lr_network = read.csv(system.file('extdata', 'lr_network.csv', package='scSignalMap'), header=TRUE)
+    receptor_ensembl = lr_network[,paste('receptor',species,'ensembl',sep='_')]
+    receptor_symbol = lr_network[,paste('receptor',species,'symbol',sep='_')]
+    receptor_genes = unique(na.omit(receptor_ensembl))
+    ensembl_to_symbol = setNames(receptor_symbol, receptor_ensembl)
+
+    message("Filter for downregulated receptors")
+    downreg_receptors = de_condition_filtered %>%
+                      dplyr::filter(ensembl_id %in% receptor_genes & avg_log2FC <= -FC_cutoff)
+    downreg_receptors$gene_symbol = ensembl_to_symbol[downreg_receptors$ensembl_id]
+
+    downreg_receptors = downreg_receptors[, c("gene_symbol", setdiff(names(downreg_receptors), "gene_symbol"))]  
+
+    return(downreg_receptors)
 }
 
 
@@ -283,26 +312,22 @@ filter_lr_interactions = function(interactions = NULL, sender_celltypes = NULL, 
 }
 
 
-#######################################################################
-## Intersect Upregulated Receptors with Ligand-Receptor Interactions ##
-#######################################################################
-
-##' Intersect upregulated receptors with filtered ligand-receptor interactions
+##' Intersect DE receptors with filtered ligand-receptor interactions
 #'
 #' This function takes previously identified DE receptor genes from chosen condition and identifies overlapping interactions
 #'
-#' @param upreg_receptors: name for output file containing DE receptors
+#' @param de_receptors: name for output file containing DE receptors
 #' @param interactions: ligand-receptor interactions dataframe from map_interactions 
 #' @return A data frame of idendified DE receptor genes found in previously idendified interactions list
 #' @export
-intersect_upreg_receptors_with_lr_interactions = function(upreg_receptors = NULL, interactions = NULL) {
+intersect_de_receptors_with_lr_interactions = function(de_receptors = NULL, interactions = NULL) {
 
-    message("Intersect upregulated receptors with filtered interactions")
+    message("Intersect DEG receptors with filtered interactions")
 
-    upreg_receptors_filtered_and_compared = upreg_receptors %>%
+    de_receptors_filtered_and_compared = de_receptors %>%
                                             dplyr::filter(gene_symbol %in% interactions$Receptor_Symbol)
 
-return(upreg_receptors_filtered_and_compared)
+return(de_receptors_filtered_and_compared)
 }
 
 
@@ -363,6 +388,8 @@ find_enriched_pathways = function(seurat_obj = NULL, de_condition_filtered = NUL
 
     # Rename the Genes so they are correct for mouse, and shouldn't hurt human
     enrichr_results = enrichment_results_combined %>% mutate(tmp = paste(convert_me[strsplit(Genes, ";")[[1]]], collapse=';'))
+
+    # Filter down to only the significantly enriched pathways
     enrichr_results = enrichr_results[enrichr_results$Adjusted.P.value < adj_p_val_cutoff, ]
 
     return(enrichr_results)
@@ -397,7 +424,7 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
   #####################
   ### Run pipeline  ###
   #####################
-  message("Running MapInteractions...")
+  message("Running map_interactions...")
   LR_interactions = MapInteractions(seurat_obj, 
                                     group_by = celltype_column,
                                     cond_column = cond_column,
@@ -422,6 +449,11 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
       de_condition_filtered = de_cond_celltype,
       FC_cutoff = FC_cutoff, species=species)
 
+  message("Finding upregulated receptors...")
+  downreg_receptors = find_downreg_receptors(
+      de_condition_filtered = de_cond_celltype,
+      FC_cutoff = FC_cutoff, species=species)
+
   message("Filtering LR interactions...")
   interactions_filtered = filter_lr_interactions(
       interactions = LR_interactions,
@@ -429,10 +461,14 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
       receiver_celltypes = receiver_celltypes,
       secreted_lig = secreted_lig)
 
-  message("Intersecting receptors with interactions...")
-  upreg_receptors_filtered_and_compared =
-        intersect_upreg_receptors_with_lr_interactions(
+  message("Intersecting receptors with interactions (up)...")
+  upreg_receptors_filtered_and_compared = intersect_de_receptors_with_lr_interactions(
       upreg_receptors = upreg_receptors,
+      interactions = interactions_filtered)
+
+  message("Intersecting receptors with interactions (down)...")
+  downreg_receptors_filtered_and_compared = intersect_de_receptors_with_lr_interactions(
+      downreg_receptors = downreg_receptors,
       interactions = interactions_filtered)
 
   message("Running pathway enrichment...")
@@ -451,8 +487,10 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
       LR_interactions = LR_interactions,
       de_cond_celltype = de_cond_celltype,
       upreg_receptors = upreg_receptors,
+      downreg_receptors = downreg_receptors,
       interactions_filtered = interactions_filtered,
       upreg_receptors_filtered_and_compared = upreg_receptors_filtered_and_compared,
+      downreg_receptors_filtered_and_compared = downreg_receptors_filtered_and_compared,
       enrichr_results = enrichr_results))
 }
 
