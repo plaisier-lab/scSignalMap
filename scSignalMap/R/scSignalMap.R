@@ -492,10 +492,7 @@ create_master_interaction_list = function(
       rec1_df = scSignalMap_data_filtered %>%
         dplyr::filter(Receptor_Symbol == rec1)
       if (nrow(rec1_df) > 0) {
-        combined_df = bind_cols(
-          cur_term_df[rep(1, nrow(rec1_df)), ],
-          rec1_df
-        )
+        combined_df = bind_cols(cur_term_df[rep(1, nrow(rec1_df)), ], rec1_df)
         master_list[[length(master_list) + 1]] = combined_df
       }
     }
