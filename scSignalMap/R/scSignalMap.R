@@ -506,41 +506,42 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
 create_master_interaction_list = function(
   enrichr_results = results$enrichr_results,
   de_receptors = results$upreg_receptors_filtered_and_compared,
-  scSignalMap_data_filtered = results$interactions_filtered
-) {
-  
-  ## Step 1: Clean Enrichr results
-  enrichr_results = enrichr_results[, !(names(enrichr_results) %in% c("Old.P.value", "Old.Adjusted.P.value"))]
-  
-  # Break appart the genes
-  genes = sapply(enrichr_results$Genes, function(x) { strsplit(x,';')[[1]] })
-  names(genes) = enrichr_results$Term
+  scSignalMap_data_filtered = results$interactions_filtered) {
 
-  # Filtering down to terms
-  matched = list()
-  for(term1 in names(genes)) {
-      intersect1 = intersect(genes[[term1]],unique(de_receptors$gene_symbol))
-      if(length(intersect1)>0) {
-          matched[[term1]] = intersect1
-      }
-  }
-  
-  # Make the master list
-  master_list = vector("list", length = 0)
-  for (term1 in names(matched)) {
-    cur_term_df = enrichr_results %>%
-      dplyr::filter(Term == term1)
-    for (rec1 in matched[[term1]]) {
-      rec1_df = scSignalMap_data_filtered %>%
-        dplyr::filter(Receptor_Symbol == rec1)
-      if (nrow(rec1_df) > 0) {
-        combined_df = bind_cols(cur_term_df[rep(1, nrow(rec1_df)), ], rec1_df)
-        master_list[[length(master_list) + 1]] = combined_df
-      }
+    ## Step 1: Clean Enrichr results
+    enrichr_results = enrichr_results[, !(names(enrichr_results) %in% c("Old.P.value", "Old.Adjusted.P.value"))]
+
+    # Break appart the genes
+    genes = sapply(enrichr_results$Genes, function(x) { strsplit(x,';')[[1]] })
+    names(genes) = enrichr_results$Term
+
+    # Filtering down to terms
+    matched = list()
+    for(term1 in names(genes)) {
+        intersect1 = intersect(genes[[term1]],unique(de_receptors$gene_symbol))
+        if(length(intersect1)>0) {
+            matched[[term1]] = intersect1
+        }
     }
-  }
 
-  master_list = bind_rows(master_list)
-  
-  return(master_list)
+    # Make the master list
+    master_list = vector("list", length = 0)
+    for (term1 in names(matched)) {
+        cur_term_df = enrichr_results %>%
+          dplyr::filter(Term == term1)
+        for (rec1 in matched[[term1]]) {
+            rec1_df = scSignalMap_data_filtered %>%
+              dplyr::filter(Receptor_Symbol == rec1)
+            deg_res = de_receptors %>%
+              dplyr::filter(gene_symbol == rec1)
+            if (nrow(rec1_df) > 0) {
+                combined_df = bind_cols(cur_term_df[rep(1, nrow(rec1_df)), ], rec1_df, deg_res[,c('p_val','p_val_adj','avg_log2FC','pct.1','pct.2')])
+                master_list[[length(master_list) + 1]] = combined_df
+            }
+        }
+    }
+
+    master_list = bind_rows(master_list)
+
+    return(master_list)
 }
