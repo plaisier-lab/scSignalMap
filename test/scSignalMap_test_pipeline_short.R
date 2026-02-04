@@ -1,7 +1,7 @@
 #----docker 
 #docker run -it -v "/home/jswoodl2/MN_data:/files" --rm cplaisier/quadculture
 
-remotes::install_github('plaisier-lab/scSignalMap/scSignalMap@v1.1')
+remotes::install_github('plaisier-lab/scSignalMap/scSignalMap@with_feedback')
 install.packages("enrichR")
 install.packages("fastmatch")
 library(scSignalMap)
@@ -25,8 +25,10 @@ seurat1 = readRDS("seurat_objects/MN_big_int.rds")
 
 
 ## Run function and save as .csv (add gene_id='symbol' if needed)
-LR_interactions = MapInteractions(seurat1,
-                                  'celltype')
+LR_interactions = map_interactions(seurat_obj = seurat1, 
+                                  group_by = 'celltype', 
+                                  cond_column = 'orig.ident', 
+                                  cond_name1 = 'MN2')
 write.csv(LR_interactions, "MN_big_int_scSignalMap_interactions.csv")
 
 
@@ -50,6 +52,14 @@ upreg_receptors = find_upreg_receptors(
     FC_cutoff = 0.3)
 write.csv(upreg_receptors, "upregulated_receptors_btwn_MN2_vs_MN1_GB3_Tumor.csv", row.names = FALSE)
 
+
+## Find downregulated receptors
+downreg_receptors = find_downreg_receptors(
+    de_condition_filtered = de_cond_celltype,
+    FC_cutoff = 0.3)
+write.csv(downreg_receptors, "downregulated_receptors_btwn_MN2_vs_MN1_GB3_Tumor.csv", row.names = FALSE)
+
+
 ## Filter LR Interactions
 interactions_filtered = filter_lr_interactions(
     interactions = LR_interactions,
@@ -59,10 +69,24 @@ interactions_filtered = filter_lr_interactions(
 
 
 ## Intersect upregulated receptors with ligand-receptor pairs
-upreg_receptors_filtered_and_compared = intersect_upreg_receptors_with_lr_interactions(
-    upreg_receptors = upreg_receptors,
+upreg_receptors_filtered_and_compared = intersect_de_receptors_with_lr_interactions(
+    de_receptors = upreg_receptors,
     interactions = interactions_filtered)
 write.csv(upreg_receptors_filtered_and_compared, "upreg_receptors_filtered_and_compared.csv", row.names = FALSE)
+
+
+## Intersect upregulated receptors with ligand-receptor pairs
+downreg_receptors_filtered_and_compared = intersect_de_receptors_with_lr_interactions(
+    de_receptors = downreg_receptors,
+    interactions = interactions_filtered)
+write.csv(downreg_receptors_filtered_and_compared, "downreg_receptors_filtered_and_compared.csv", row.names = FALSE)
+
+
+## Integrate up and down regualted receptors
+combined_receptors_filtered_and_compared = rbind(upreg_receptors_filtered_and_compared, downreg_receptors_filtered_and_compared)
+combined_receptors_filtered_and_compared[,'Feeback'] = ifelse(combined_receptors_filtered_and_compared[,'avg_log2FC']>0, 'Amplification','Adaptation')
+write.csv(combined_receptors_filtered_and_compared, "combined_receptors_filtered_and_compared.csv", row.names = FALSE)
+
 
 ## Find pathways that are enriched with DE genes that include the upregulated receptor
 enrichr_results = find_enriched_pathways(
@@ -77,7 +101,7 @@ write.csv(enrichr_results, "enrichr_results.csv", row.names = FALSE)
 ## Master List Call 
 master_interaction_list = create_master_interaction_list(
   enrichr_results = enrichr_results,
-  de_receptors = upreg_receptors_filtered_and_compared,
+  de_receptors = combined_receptors_filtered_and_compared,
   scSignalMap_data_filtered = interactions_filtered)
-write.csv(master_interaction_list, "12.02.25_master_interaction_list.csv", row.names = FALSE)
+write.csv(master_interaction_list, "02.04.25_master_interaction_list.csv", row.names = FALSE)
 
