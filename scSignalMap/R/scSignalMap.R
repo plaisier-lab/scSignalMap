@@ -473,7 +473,7 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
 
   message("Integrate up and down regualted receptors...")
   combined_receptors_filtered_and_compared = rbind(upreg_receptors_filtered_and_compared, downreg_receptors_filtered_and_compared)
-  combined_receptors_filtered_and_compared[,'Feeback'] = ifelse(combined_receptors_filtered_and_compared[,'avg_log2FC']>0, 'Amplification','Adaptation')
+  combined_receptors_filtered_and_compared[,'Feedback'] = ifelse(combined_receptors_filtered_and_compared[,'avg_log2FC']>0, 'Amplification','Adaptation')
 
   message("Running pathway enrichment...")
   enrichr_results = find_enriched_pathways(
