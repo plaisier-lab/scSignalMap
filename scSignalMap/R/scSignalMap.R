@@ -425,7 +425,7 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
   ### Run pipeline  ###
   #####################
   message("Running map_interactions...")
-  LR_interactions = MapInteractions(seurat_obj, 
+  LR_interactions = map_interactions(seurat_obj, 
                                     group_by = celltype_column,
                                     cond_column = cond_column,
                                     cond_name1= cond_name1,
