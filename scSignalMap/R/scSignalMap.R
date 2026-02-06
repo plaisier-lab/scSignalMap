@@ -463,12 +463,12 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
 
   message("Intersecting receptors with interactions (up)...")
   upreg_receptors_filtered_and_compared = intersect_de_receptors_with_lr_interactions(
-      upreg_receptors = upreg_receptors,
+      de_receptors = upreg_receptors,
       interactions = interactions_filtered)
 
   message("Intersecting receptors with interactions (down)...")
   downreg_receptors_filtered_and_compared = intersect_de_receptors_with_lr_interactions(
-      downreg_receptors = downreg_receptors,
+      de_receptors = downreg_receptors,
       interactions = interactions_filtered)
 
   message("Integrate up and down regualted receptors...")
