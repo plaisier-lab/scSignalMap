@@ -219,7 +219,6 @@ find_markers_btwn_cond_for_celltype = function(seurat_obj = NULL, prep_SCT = FAL
 
     de_cond_celltype = de_cond_celltype[, c("ensembl_id", "gene_symbol", setdiff(colnames(de_cond_celltype), c("ensembl_id", "gene_symbol")))]
 
-    write.csv(de_cond_celltype, "de_genes.csv")
     return(de_cond_celltype)
 }
 
@@ -260,7 +259,8 @@ find_de_receptors = function(de_condition_filtered= NULL, FC_cutoff = 0.3, direc
 
     de_receptors[,'Feedback'] =
         ifelse(de_receptors[,'avg_log2FC'] > 0, 'Amplification', 'Adaptation')
-
+    
+    write.csv(de_receptors, "de_receptors.csv")
     return(de_receptors)
 }
 
