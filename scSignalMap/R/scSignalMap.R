@@ -219,6 +219,7 @@ find_markers_btwn_cond_for_celltype = function(seurat_obj = NULL, prep_SCT = FAL
 
     de_cond_celltype = de_cond_celltype[, c("ensembl_id", "gene_symbol", setdiff(colnames(de_cond_celltype), c("ensembl_id", "gene_symbol")))]
 
+    write.csv(de_cond_celltype, "de_genes.csv")
     return(de_cond_celltype)
 }
 
