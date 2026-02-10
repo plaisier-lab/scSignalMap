@@ -223,15 +223,17 @@ find_markers_btwn_cond_for_celltype = function(seurat_obj = NULL, prep_SCT = FAL
 }
 
 
-##' Identify up-regulated receptors
+##' Identify differentially expressed receptors
 #'
-#' This function identifies upregualted receptors from a given DE gene table using a chosen log2FC cutoff
+#' This function identifies differentially expressed receptors from a given DE gene table using a chosen log2FC cutoff
 #'
 #' @param de_condition_filtered: differentially expressed genes output from find_markers_btwn_cond_for_celltype function
-#' @param FC_cutoff: desired cutoff for log2FC values using >= the absolute value, default is 0.3
+#' @param FC_cutoff: desired cutoff for greater than or equal to log2FC values, default is 0.3
+#' @param direction: direction for the differential expression, options are 'up', 'down', or 'both'
+#' @param species: the species of oranism being studied, default is 'human'
 #' @return A dataframe with identified DE genes and their log2FC from previously chosen condition
 #' @export
-find_upreg_receptors = function(de_condition_filtered= NULL, FC_cutoff = 0.3, species = 'human') {
+find_de_receptors = function(de_condition_filtered= NULL, FC_cutoff = 0.3, direction = 'both', species = 'human') {
 
     message("Loading ligand-receptor information")
     # Load MultiNicheNet ligand receptor interactions
@@ -241,43 +243,21 @@ find_upreg_receptors = function(de_condition_filtered= NULL, FC_cutoff = 0.3, sp
     receptor_genes = unique(na.omit(receptor_ensembl))
     ensembl_to_symbol = setNames(receptor_symbol, receptor_ensembl)
 
-    message("Filter for upregulated receptors")
-    upreg_receptors = de_condition_filtered %>%
-                      dplyr::filter(ensembl_id %in% receptor_genes & avg_log2FC >= FC_cutoff)
-    upreg_receptors$gene_symbol = ensembl_to_symbol[upreg_receptors$ensembl_id]
+    message(paste0("Filter for ",direction," DE receptors"))
+    if(direction=='up') {
+        de_receptors = de_condition_filtered %>%
+                          dplyr::filter((ensembl_id %in% receptor_genes) & (avg_log2FC >= FC_cutoff))
+    } if else(direction=='down') {
+        de_receptors = de_condition_filtered %>%
+                          dplyr::filter((ensembl_id %in% receptor_genes) & (avg_log2FC <= -FC_cutoff))
+    } if else(direction=='both') {
+        de_receptors = de_condition_filtered %>%
+                          dplyr::filter((ensembl_id %in% receptor_genes) & (abs(avg_log2FC) >= FC_cutoff))
+    }
+    de_receptors$gene_symbol = ensembl_to_symbol[de_receptors$ensembl_id]
+    de_receptors = de_receptors[, c("gene_symbol", setdiff(names(de_receptors), "gene_symbol"))]  
 
-    upreg_receptors = upreg_receptors[, c("gene_symbol", setdiff(names(upreg_receptors), "gene_symbol"))]  
-
-    return(upreg_receptors)
-}
-
-
-##' Identify down-regulated receptors
-#'
-#' This function identifies down-regualted receptors from a given DE gene table using a chosen log2FC cutoff
-#'
-#' @param de_condition_filtered: differentially expressed genes output from find_markers_btwn_cond_for_celltype function
-#' @param FC_cutoff: desired cutoff for log2FC values using <= the absolute value, default is 0.3
-#' @return A dataframe with identified DE genes and their log2FC from previously chosen condition
-#' @export
-find_downreg_receptors = function(de_condition_filtered= NULL, FC_cutoff = 0.3, species = 'human') {
-
-    message("Loading ligand-receptor information")
-    # Load MultiNicheNet ligand receptor interactions
-    lr_network = read.csv(system.file('extdata', 'lr_network.csv', package='scSignalMap'), header=TRUE)
-    receptor_ensembl = lr_network[,paste('receptor',species,'ensembl',sep='_')]
-    receptor_symbol = lr_network[,paste('receptor',species,'symbol',sep='_')]
-    receptor_genes = unique(na.omit(receptor_ensembl))
-    ensembl_to_symbol = setNames(receptor_symbol, receptor_ensembl)
-
-    message("Filter for downregulated receptors")
-    downreg_receptors = de_condition_filtered %>%
-                      dplyr::filter(ensembl_id %in% receptor_genes & avg_log2FC <= -FC_cutoff)
-    downreg_receptors$gene_symbol = ensembl_to_symbol[downreg_receptors$ensembl_id]
-
-    downreg_receptors = downreg_receptors[, c("gene_symbol", setdiff(names(downreg_receptors), "gene_symbol"))]  
-
-    return(downreg_receptors)
+    return(de_receptors)
 }
 
 
@@ -444,15 +424,10 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
       adj_p_val_cutoff = adj_p_val_cutoff,
       ensdb = ensdb)
 
-  message("Finding upregulated receptors...")
-  upreg_receptors = find_upreg_receptors(
+  message("Finding DE receptors...")
+  de_receptors = find_de_receptors(
       de_condition_filtered = de_cond_celltype,
-      FC_cutoff = FC_cutoff, species=species)
-
-  message("Finding upregulated receptors...")
-  downreg_receptors = find_downreg_receptors(
-      de_condition_filtered = de_cond_celltype,
-      FC_cutoff = FC_cutoff, species=species)
+      FC_cutoff = FC_cutoff, species=species, direction='both')
 
   message("Filtering LR interactions...")
   interactions_filtered = filter_lr_interactions(
@@ -462,18 +437,12 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
       secreted_lig = secreted_lig)
 
   message("Intersecting receptors with interactions (up)...")
-  upreg_receptors_filtered_and_compared = intersect_de_receptors_with_lr_interactions(
-      de_receptors = upreg_receptors,
-      interactions = interactions_filtered)
-
-  message("Intersecting receptors with interactions (down)...")
-  downreg_receptors_filtered_and_compared = intersect_de_receptors_with_lr_interactions(
-      de_receptors = downreg_receptors,
+  de_receptors_filtered_and_compared = intersect_de_receptors_with_lr_interactions(
+      de_receptors = de_receptors,
       interactions = interactions_filtered)
 
   message("Integrate up and down regualted receptors...")
-  combined_receptors_filtered_and_compared = rbind(upreg_receptors_filtered_and_compared, downreg_receptors_filtered_and_compared)
-  combined_receptors_filtered_and_compared[,'Feedback'] = ifelse(combined_receptors_filtered_and_compared[,'avg_log2FC']>0, 'Amplification','Adaptation')
+  de_receptors_filtered_and_compared[,'Feedback'] = ifelse(de_receptors_filtered_and_compared[,'avg_log2FC']>0, 'Amplification','Adaptation')
 
   message("Running pathway enrichment...")
   enrichr_results = find_enriched_pathways(
@@ -490,12 +459,9 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
   return(list(
       LR_interactions = LR_interactions,
       de_cond_celltype = de_cond_celltype,
-      upreg_receptors = upreg_receptors,
-      downreg_receptors = downreg_receptors,
+      de_receptors = de_receptors,
       interactions_filtered = interactions_filtered,
-      upreg_receptors_filtered_and_compared = upreg_receptors_filtered_and_compared,
-      downreg_receptors_filtered_and_compared = downreg_receptors_filtered_and_compared,
-      combined_receptors_filtered_and_compared = combined_receptors_filtered_and_compared,
+      de_receptors_filtered_and_compared = de_receptors_filtered_and_compared,
       enrichr_results = enrichr_results))
 }
 
@@ -511,7 +477,7 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
 #' @export
 create_master_interaction_list = function(
   enrichr_results = results$enrichr_results,
-  de_receptors = results$combined_receptors_filtered_and_compared,
+  de_receptors = results$de_receptors_filtered_and_compared,
   scSignalMap_data_filtered = results$interactions_filtered) {
 
     ## Step 1: Clean Enrichr results
