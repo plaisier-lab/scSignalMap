@@ -257,6 +257,9 @@ find_de_receptors = function(de_condition_filtered= NULL, FC_cutoff = 0.3, direc
     de_receptors$gene_symbol = ensembl_to_symbol[de_receptors$ensembl_id]
     de_receptors = de_receptors[, c("gene_symbol", setdiff(names(de_receptors), "gene_symbol"))]  
 
+    de_receptors[,'Feedback'] =
+        felse(de_receptors[,'avg_log2FC'] > 0, 'Amplification', 'Adaptation')
+
     return(de_receptors)
 }
 
@@ -302,7 +305,7 @@ filter_lr_interactions = function(interactions = NULL, sender_celltypes = NULL, 
 #' @export
 intersect_de_receptors_with_lr_interactions = function(de_receptors = NULL, interactions = NULL) {
 
-    message("Intersect DEG receptors with filtered interactions")
+    message("Intersect DE receptors with filtered interactions")
 
     de_receptors_filtered_and_compared = de_receptors %>%
                                             dplyr::filter(gene_symbol %in% interactions$Receptor_Symbol)
@@ -427,7 +430,7 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
   message("Finding DE receptors...")
   de_receptors = find_de_receptors(
       de_condition_filtered = de_cond_celltype,
-      FC_cutoff = FC_cutoff, species=species, direction='both')
+      FC_cutoff = FC_cutoff, species = species, direction = 'both')
 
   message("Filtering LR interactions...")
   interactions_filtered = filter_lr_interactions(
@@ -436,13 +439,10 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
       receiver_celltypes = receiver_celltypes,
       secreted_lig = secreted_lig)
 
-  message("Intersecting receptors with interactions (up)...")
+  message("Intersecting receptors with interactions...")
   de_receptors_filtered_and_compared = intersect_de_receptors_with_lr_interactions(
       de_receptors = de_receptors,
       interactions = interactions_filtered)
-
-  message("Integrate up and down regualted receptors...")
-  de_receptors_filtered_and_compared[,'Feedback'] = ifelse(de_receptors_filtered_and_compared[,'avg_log2FC']>0, 'Amplification','Adaptation')
 
   message("Running pathway enrichment...")
   enrichr_results = find_enriched_pathways(
