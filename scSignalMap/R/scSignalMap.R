@@ -247,10 +247,10 @@ find_de_receptors = function(de_condition_filtered= NULL, FC_cutoff = 0.3, direc
     if(direction == 'up') {
         de_receptors = de_condition_filtered %>%
                           dplyr::filter((ensembl_id %in% receptor_genes) & (avg_log2FC >= FC_cutoff))
-    } if else(direction == 'down') {
+    } else if(direction == 'down') {
         de_receptors = de_condition_filtered %>%
                           dplyr::filter((ensembl_id %in% receptor_genes) & (avg_log2FC <= -FC_cutoff))
-    } if else(direction == 'both') {
+    } else if(direction == 'both') {
         de_receptors = de_condition_filtered %>%
                           dplyr::filter((ensembl_id %in% receptor_genes) & (abs(avg_log2FC) >= FC_cutoff))
     }
@@ -258,7 +258,7 @@ find_de_receptors = function(de_condition_filtered= NULL, FC_cutoff = 0.3, direc
     de_receptors = de_receptors[, c("gene_symbol", setdiff(names(de_receptors), "gene_symbol"))]  
 
     de_receptors[,'Feedback'] =
-        felse(de_receptors[,'avg_log2FC'] > 0, 'Amplification', 'Adaptation')
+        ifelse(de_receptors[,'avg_log2FC'] > 0, 'Amplification', 'Adaptation')
 
     return(de_receptors)
 }
