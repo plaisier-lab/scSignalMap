@@ -244,13 +244,13 @@ find_de_receptors = function(de_condition_filtered= NULL, FC_cutoff = 0.3, direc
     ensembl_to_symbol = setNames(receptor_symbol, receptor_ensembl)
 
     message(paste0("Filter for ",direction," DE receptors"))
-    if(direction=='up') {
+    if(direction == 'up') {
         de_receptors = de_condition_filtered %>%
                           dplyr::filter((ensembl_id %in% receptor_genes) & (avg_log2FC >= FC_cutoff))
-    } if else(direction=='down') {
+    } if else(direction == 'down') {
         de_receptors = de_condition_filtered %>%
                           dplyr::filter((ensembl_id %in% receptor_genes) & (avg_log2FC <= -FC_cutoff))
-    } if else(direction=='both') {
+    } if else(direction == 'both') {
         de_receptors = de_condition_filtered %>%
                           dplyr::filter((ensembl_id %in% receptor_genes) & (abs(avg_log2FC) >= FC_cutoff))
     }
