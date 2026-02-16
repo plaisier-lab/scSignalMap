@@ -60,6 +60,7 @@ map_interactions = function(seurat_obj, group_by, cond_column, cond_name1, avg_l
     cat('  Identifying marker genes...\n')
     
     putative_markers = FindAllMarkers(seurat_obj, group.by=group_by, min.pct=min_pct, verbose=T)
+    print(dim(putative_markers))
     markers = list()
     print(as.character(sort(unique(seurat_obj@meta.data[,group_by]))))
     for(clust1 in as.character(sort(unique(seurat_obj@meta.data[,group_by])))) {
