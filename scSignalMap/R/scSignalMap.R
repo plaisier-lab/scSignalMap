@@ -33,7 +33,7 @@
 #' @param gene_id: what type of gene ID is used, either 'ensembl' or 'symbol', defaults to 'ensembl'
 #' @return data.frame with putative interactions
 #' @export
-map_interactions = function(seurat_obj, group_by, cond_column, cond_name1, avg_log2FC_gte = 0.25, p_val_adj_lte = 0.05, min_pct = 0.1, species='human', gene_id='ensembl') {
+map_interactions = function(seurat_obj, group_by, cond_column, cond_name1, avg_log2FC_gte = 0.25, p_val_adj_lte = 0.05, min_pct = 0.1, species='human', gene_id='ensembl', prep_SCT = TRUE) {
     cat('Running scSignalMap:\n')
     
 
@@ -55,7 +55,13 @@ map_interactions = function(seurat_obj, group_by, cond_column, cond_name1, avg_l
     colnames(secreted)[1] = 'human_ensembl'
     secreted_ligands = na.omit(secreted[,paste(species,gene_id,sep='_')])
 
+    
+    message("Preparing to run FindMarkers...")
+    if(prep_SCT==TRUE) {
+        seurat_obj = PrepSCTFindMarkers(seurat_obj)
+    }
 
+    
     ## Step 2. Identify marker genes
     cat('  Identifying marker genes...\n')
     
