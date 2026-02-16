@@ -64,7 +64,7 @@ map_interactions = function(seurat_obj, group_by, cond_column, cond_name1, avg_l
     print(as.character(sort(unique(seurat_obj@meta.data[,group_by]))))
     for(clust1 in as.character(sort(unique(seurat_obj@meta.data[,group_by])))) {
         print(clust1)
-        markers[[clust1]] = putative_markers %>% dplyr::filter(cluster==clust1 & abs(avg_log2FC)>=avg_log2FC_gte & p_val_adj<=p_val_adj_lte) %>% dplyr::pull(name='gene')
+        markers[[clust1]] = putative_markers %>% dplyr::filter(cluster==clust1, abs(avg_log2FC)>=avg_log2FC_gte, p_val_adj<=p_val_adj_lte) %>% dplyr::pull(name='gene')
         #cat(paste0('    ',cluster1,': ',length(markers[[cluster1]]),'\n'))
     }
 
