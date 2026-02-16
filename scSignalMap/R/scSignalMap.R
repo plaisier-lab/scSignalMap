@@ -193,7 +193,6 @@ find_markers_btwn_cond_for_celltype = function(seurat_obj = NULL, prep_SCT = FAL
     if(prep_SCT==TRUE) {
         seurat_obj = PrepSCTFindMarkers(seurat_obj)
     }
-    seurat_obj = PrepSCTFindMarkers(seurat_obj)
 
     message("Subsetting and setting identities...")
     cells.1 = rownames(seurat_obj@meta.data %>% dplyr::filter((!!sym(celltype_column) == celltype_name) & (!!sym(cond_column) == cond_name1)))
