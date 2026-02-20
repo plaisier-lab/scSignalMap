@@ -162,7 +162,7 @@ map_interactions = function(seurat_obj, group_by, cond_column, cond_name1, cond_
     pairs_data2 = lr_dt[clust_dt2, on = "dummy", allow.cartesian = TRUE][, `:=`(dummy, NULL)]
     
     cat(paste0('    Rows cond1 = ',nrow(pairs_data1),'\n'))
-    cat(paste0('    Rows cond2 = ',nrow(paris_data2),'\n'))
+    cat(paste0('    Rows cond2 = ',nrow(pairs_data2),'\n'))
 
     cat('  Integrating data...\n')
     steps = 13
