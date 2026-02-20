@@ -159,10 +159,8 @@ map_interactions = function(seurat_obj, group_by, cond_column, cond_name1, cond_
     clust_dt2[, `:=`(dummy, 1)]
 
     pairs_data1 = lr_dt[clust_dt1, on = "dummy", allow.cartesian = TRUE][, `:=`(dummy, NULL)]
-    #pairs_data2 = lr_dt[clust_dt2, on = "dummy", allow.cartesian = TRUE][, `:=`(dummy, NULL)]
     
-    cat(paste0('    Rows cond1 = ',nrow(pairs_data1),'\n'))
-    #cat(paste0('    Rows cond2 = ',nrow(pairs_data2),'\n'))
+    cat(paste0('    Rows = ',nrow(pairs_data1),'\n'))
 
     cat('  Integrating data...\n')
     steps = 13
@@ -206,7 +204,6 @@ map_interactions = function(seurat_obj, group_by, cond_column, cond_name1, cond_
     close(pb)
     cat('Done.\n')
 
-    #return(cbind(pairs_data1, pairs_data2[,c(7:ncol(pairs_data2))]))
     return(pairs_data1)
 }
 
@@ -301,7 +298,7 @@ find_de_receptors = function(de_condition_filtered= NULL, FC_cutoff = 0.3, direc
     de_receptors[,'Feedback'] =
         ifelse(de_receptors[,'avg_log2FC'] > 0, 'Amplification', 'Adaptation')
     
-    write.csv(de_receptors, "de_receptors.csv")
+    #write.csv(de_receptors, "de_receptors.csv")
     return(de_receptors)
 }
 
