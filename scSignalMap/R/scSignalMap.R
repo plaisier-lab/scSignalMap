@@ -209,7 +209,7 @@ map_interactions = function(seurat_obj, group_by, cond_column, cond_name1, cond_
     close(pb)
     cat('Done.\n')
 
-    return(cbind(pairs_data1, pairs_data2))
+    return(cbind(pairs_data1, pairs_data2[,c(7:ncol(paris_data2))]))
 }
 
 
