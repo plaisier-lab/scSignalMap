@@ -191,7 +191,7 @@ map_interactions = function(seurat_obj, group_by, cond_column, cond_name1, cond_
     pairs_data1[, ':='(paste0('Receptor_Counts_',cond_name1), all_dt1[pairs_data1, on = .(clust1=Receiver, gene=Receptor), counts])]
     pairs_data2[, ':='(paste0('Receptor_Counts_',cond_name2), all_dt2[pairs_data1, on = .(clust1=Receiver, gene=Receptor), counts])]
     utils::setTxtProgressBar(pb, 8)
-    pairs_data1[,`:=`(paset0('Receptor_gte_3_',cond_name1), all_dt1[pairs_data1, on = .(clust1=Receiver, gene=Receptor), perc_gte_3])]
+    pairs_data1[,`:=`(paste0('Receptor_gte_3_',cond_name1), all_dt1[pairs_data1, on = .(clust1=Receiver, gene=Receptor), perc_gte_3])]
     pairs_data2[,`:=`(paste0('Receptor_gte_3_',cond_name2), all_dt2[pairs_data2, on = .(clust1=Receiver, gene=Receptor), perc_gte_3])]
     utils::setTxtProgressBar(pb, 9)
     pairs_data1[,`:=`(paste0('Receptor_gte_10_',cond_name1), all_dt1[pairs_data1, on = .(clust1=Receiver, gene=Receptor), perc_gte_10])]
