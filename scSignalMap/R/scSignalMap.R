@@ -133,9 +133,9 @@ map_interactions = function(seurat_obj, group_by, cond_column, cond_name1, cond_
     
     # All sender/receiver combinations
     clusts1 = as.character(sort(unique(seurat_obj_cond1@meta.data[[group_by]])))
-    clust_dt1 = data.table::CJ(Sender = clusts, Receiver = clusts)  # Cartesian product
+    clust_dt1 = data.table::CJ(Sender = clusts1, Receiver = clusts1)  # Cartesian product
     clusts2 = as.character(sort(unique(seurat_obj_cond1@meta.data[[group_by]])))
-    clust_dt2 = data.table::CJ(Sender = clusts, Receiver = clusts)  # Cartesian product
+    clust_dt2 = data.table::CJ(Sender = clusts2, Receiver = clusts2)  # Cartesian product
 
 
     # Ligand-Receptor pairs table
