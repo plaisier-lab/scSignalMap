@@ -16,6 +16,8 @@
 ## If this program is used in your analysis please              ##
 ## mention who built it. Thanks. :-)                            ##
 ##################################################################
+
+
 #' Capturing signaling pathways using scRNA-seq data
 #'
 #' Function to capture signaling pathways using scRNA-seq data.
@@ -23,16 +25,18 @@
 #'
 #' @param seurat_obj: a seurat object must be supplied to classify, no default
 #' @param group_by: a meta_data column that will be used to split the cells, no default
+#' @param cond_column: meta.data column name for condition information 
+#' @param cond_name1: condition column value that compared to cond_name2 for differential expression analysis, must be specified
 #' @param avg_log2FC_gte: 
 #' @param p_val_adj_lte: 
 #' @param species: from which species did the samples originate, either 'human' or 'mouse', defaults to 'human'
 #' @param gene_id: what type of gene ID is used, either 'ensembl' or 'symbol', defaults to 'ensembl'
 #' @return data.frame with putative interactions
 #' @export
-MapInteractions = function(seurat_obj, group_by, cond_column, cond_name1, avg_log2FC_gte = 0.25, p_val_adj_lte = 0.05, min_pct = 0.1, species='human', gene_id='ensembl') {
+map_interactions = function(seurat_obj, group_by, cond_column, cond_name1, cond_name2, avg_log2FC_gte = 0.25, p_val_adj_lte = 0.05, min_pct = 0.1, species='human', gene_id='ensembl', prep_SCT = TRUE) {
     cat('Running scSignalMap:\n')
-
     
+
     ## Step 1. Load up the data
     cat('  Loading data...\n')
     # Load MultiNicheNet ligand receptor interactions
@@ -51,7 +55,14 @@ MapInteractions = function(seurat_obj, group_by, cond_column, cond_name1, avg_lo
     colnames(secreted)[1] = 'human_ensembl'
     secreted_ligands = na.omit(secreted[,paste(species,gene_id,sep='_')])
 
+    
+    # Prepare for FindMarkers by running PrepSCTFindMarkers, required for integrated datasets
+    message("Preparing to run FindMarkers...")
+    if(prep_SCT==TRUE) {
+        seurat_obj = PrepSCTFindMarkers(seurat_obj)
+    }
 
+    
     ## Step 2. Identify marker genes
     cat('  Identifying marker genes...\n')
     
@@ -59,8 +70,7 @@ MapInteractions = function(seurat_obj, group_by, cond_column, cond_name1, avg_lo
     write.csv(putative_markers, "putative_markers.csv")
     markers = list()
     for(clust1 in as.character(sort(unique(seurat_obj@meta.data[,group_by])))) {
-        print(clust1)
-        markers[[clust1]] = putative_markers %>% dplyr::filter(cluster==clust1 & avg_log2FC>=avg_log2FC_gte & p_val_adj<=p_val_adj_lte) %>% dplyr::pull(name='gene')
+        markers[[clust1]] = putative_markers %>% dplyr::filter(cluster==clust1, abs(avg_log2FC)>=avg_log2FC_gte, p_val_adj<=p_val_adj_lte) %>% dplyr::pull(name='gene')
         #cat(paste0('    ',cluster1,': ',length(markers[[cluster1]]),'\n'))
     }
 
@@ -78,12 +88,31 @@ MapInteractions = function(seurat_obj, group_by, cond_column, cond_name1, avg_lo
     # Split up the seurat object by groups
     Idents(seurat_obj) = cond_column
     seurat_obj_cond1 = subset(seurat_obj, idents = cond_name1)
-    seurat_obj_split = SplitObject(seurat_obj_cond1, split.by=group_by)
+    seurat_obj_split1 = SplitObject(seurat_obj_cond1, split.by=group_by)
+    seurat_obj_cond2 = subset(seurat_obj, idents = cond_name2)
+    seurat_obj_split2 = SplitObject(seurat_obj_cond2, split.by=group_by)
 
-    # Build a data.table with statistics
-    all_dt = rbindlist(lapply(as.character(sort(unique(seurat_obj_cond1@meta.data[,group_by]))), function(clust1) {
-                 mat = as.matrix(seurat_obj_split[[clust1]]@assays$RNA@layers$counts)
-                 genes = rownames(seurat_obj_split[[clust1]]@assays$RNA)
+    # Build a data.table with statistics: cond1
+    all_dt1 = rbindlist(lapply(as.character(sort(unique(seurat_obj_cond1@meta.data[,group_by]))), function(clust1) {
+                 mat = as.matrix(seurat_obj_split1[[clust1]]@assays$RNA@layers$counts)
+                 genes = rownames(seurat_obj_split1[[clust1]]@assays$RNA)
+                 n_cells = ncol(mat)
+
+                 data.table(
+                     clust1    = clust1,
+                     gene      = genes,
+                     counts    = rowSums(mat),
+                     perc_gt_0  = rowSums(mat > 0)  / n_cells,
+                     perc_gte_3 = rowSums(mat >= 3) / n_cells,
+                     perc_gte_10= rowSums(mat >= 10)/ n_cells,
+                     avg_exp   = rowMeans(mat)
+                 )
+             }), use.names = TRUE)
+
+    # Build a data.table with statistics: cond2
+    all_dt2 = rbindlist(lapply(as.character(sort(unique(seurat_obj_cond2@meta.data[,group_by]))), function(clust1) {
+                 mat = as.matrix(seurat_obj_split2[[clust1]]@assays$RNA@layers$counts)
+                 genes = rownames(seurat_obj_split2[[clust1]]@assays$RNA)
                  n_cells = ncol(mat)
 
                  data.table(
@@ -104,8 +133,11 @@ MapInteractions = function(seurat_obj, group_by, cond_column, cond_name1, avg_lo
     
     
     # All sender/receiver combinations
-    clusts = as.character(sort(unique(seurat_obj_cond1@meta.data[[group_by]])))
-    clust_dt = data.table::CJ(Sender = clusts, Receiver = clusts)  # Cartesian product
+    clusts1 = as.character(sort(unique(seurat_obj_cond1@meta.data[[group_by]])))
+    clust_dt1 = data.table::CJ(Sender = clusts1, Receiver = clusts1)  # Cartesian product
+    clusts2 = as.character(sort(unique(seurat_obj_cond1@meta.data[[group_by]])))
+    clust_dt2 = data.table::CJ(Sender = clusts2, Receiver = clusts2)  # Cartesian product
+
 
     # Ligand-Receptor pairs table
     if (gene_id == "symbol") {
@@ -124,46 +156,56 @@ MapInteractions = function(seurat_obj, group_by, cond_column, cond_name1, avg_lo
 
     # Cartesian product of LR pairs x cluster pairs
     lr_dt[, `:=`(dummy, 1)]
-    clust_dt[, `:=`(dummy, 1)]
+    clust_dt1[, `:=`(dummy, 1)]
+    clust_dt2[, `:=`(dummy, 1)]
 
-    pairs_data = lr_dt[clust_dt, on = "dummy", allow.cartesian = TRUE][, `:=`(dummy, NULL)]
-    #pairs_data = lr_dt[, cbind(.SD, clust_dt), by = seq_len(nrow(lr_dt))][, `:=`(seq_len, NULL)]
-
-    cat(paste0('    Rows = ',nrow(pairs_data),'\n'))
+    pairs_data1 = lr_dt[clust_dt1, on = "dummy", allow.cartesian = TRUE][, `:=`(dummy, NULL)]
+    
+    cat(paste0('    Rows = ',nrow(pairs_data1),'\n'))
 
     cat('  Integrating data...\n')
     steps = 13
     pb = utils::txtProgressBar(min = 0, max = steps, style = 3)
-    pairs_data[, `:=`(Ligand_Counts, all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), counts])]
+    pairs_data1[, `:=`(paste0('Ligand_Counts_',cond_name1), all_dt1[pairs_data1, on = .(clust1=Sender, gene=Ligand), counts])]
+    pairs_data1[, `:=`(paste0('Ligand_Counts_',cond_name2), all_dt2[pairs_data1, on = .(clust1=Sender, gene=Ligand), counts])]
     utils::setTxtProgressBar(pb, 1)
-    pairs_data[, `:=`(Ligand_gte_3, all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), perc_gte_3])]
+    pairs_data1[, `:=`(paste0('Ligand_gte_3_',cond_name1), all_dt1[pairs_data1, on = .(clust1=Sender, gene=Ligand), perc_gte_3])]
+    pairs_data1[, `:=`(paste0('Ligand_gte_3_',cond_name2), all_dt2[pairs_data1, on = .(clust1=Sender, gene=Ligand), perc_gte_3])]
     utils::setTxtProgressBar(pb, 2)
-    pairs_data[, `:=`(Ligand_gte_10, all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), perc_gte_10])]
+    pairs_data1[, `:=`(paste0('Ligand_gte_10_',cond_name1), all_dt1[pairs_data1, on = .(clust1=Sender, gene=Ligand), perc_gte_10])]
+    pairs_data1[, `:=`(paste0('Ligand_gte_10_',cond_name2), all_dt2[pairs_data1, on = .(clust1=Sender, gene=Ligand), perc_gte_10])]
     utils::setTxtProgressBar(pb, 3)
-    pairs_data[, `:=`(Ligand_Cells_Exp, all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), perc_gt_0])]
+    pairs_data1[, `:=`(paste0('Ligand_Cells_Exp_',cond_name1), all_dt1[pairs_data1, on = .(clust1=Sender, gene=Ligand), perc_gt_0])]
+    pairs_data1[, `:=`(paste0('Ligand_Cells_Exp_',cond_name2), all_dt2[pairs_data1, on = .(clust1=Sender, gene=Ligand), perc_gt_0])]
     utils::setTxtProgressBar(pb, 4)
-    pairs_data[, `:=`(Ligand_Avg_Exp, all_dt[pairs_data, on = .(clust1=Sender, gene=Ligand), avg_exp])]
+    pairs_data1[, `:=`(paste0('Ligand_Avg_Exp_',cond_name1), all_dt1[pairs_data1, on = .(clust1=Sender, gene=Ligand), avg_exp])]
+    pairs_data1[, `:=`(paste0('Ligand_Avg_Exp_',cond_name2), all_dt2[pairs_data1, on = .(clust1=Sender, gene=Ligand), avg_exp])]
     utils::setTxtProgressBar(pb, 5)
-    pairs_data[, `:=`(Ligand_Cluster_Marker, mapply(function(sender, ligand) { ligand %in% markers[[sender]] }, pairs_data$Sender, pairs_data$Ligand))]
+    pairs_data1[, `:=`(Ligand_Cluster_Marker, mapply(function(sender, ligand) { ligand %in% markers[[sender]] }, pairs_data1$Sender, pairs_data1$Ligand))]
     utils::setTxtProgressBar(pb, 6)
-    pairs_data[, `:=`(Ligand_secreted, sapply(pairs_data[['Ligand']], function(x) { x %fin% secreted_ligands }))]
+    pairs_data1[, `:=`(Ligand_secreted, sapply(pairs_data1[['Ligand']], function(x) { x %fin% secreted_ligands }))]
     utils::setTxtProgressBar(pb, 7)
-    pairs_data[, ':='(Receptor_Counts, all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), counts])]
+    pairs_data1[, ':='(paste0('Receptor_Counts_',cond_name1), all_dt1[pairs_data1, on = .(clust1=Receiver, gene=Receptor), counts])]
+    pairs_data1[, ':='(paste0('Receptor_Counts_',cond_name2), all_dt2[pairs_data1, on = .(clust1=Receiver, gene=Receptor), counts])]
     utils::setTxtProgressBar(pb, 8)
-    pairs_data[,`:=`(Receptor_gte_3, all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), 'perc_gte_3'])]
+    pairs_data1[,`:=`(paste0('Receptor_gte_3_',cond_name1), all_dt1[pairs_data1, on = .(clust1=Receiver, gene=Receptor), perc_gte_3])]
+    pairs_data1[,`:=`(paste0('Receptor_gte_3_',cond_name2), all_dt2[pairs_data1, on = .(clust1=Receiver, gene=Receptor), perc_gte_3])]
     utils::setTxtProgressBar(pb, 9)
-    pairs_data[,`:=`(Receptor_gte_10, all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), 'perc_gte_10'])]
+    pairs_data1[,`:=`(paste0('Receptor_gte_10_',cond_name1), all_dt1[pairs_data1, on = .(clust1=Receiver, gene=Receptor), perc_gte_10])]
+    pairs_data1[,`:=`(paste0('Receptor_gte_10',cond_name2), all_dt2[pairs_data1, on = .(clust1=Receiver, gene=Receptor), perc_gte_10])]
     utils::setTxtProgressBar(pb, 10)
-    pairs_data[,`:=`(Receptor_Cells_Exp, all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), perc_gt_0])]
+    pairs_data1[,`:=`(paste0('Receptor_Cells_Exp_',cond_name1), all_dt1[pairs_data1, on = .(clust1=Receiver, gene=Receptor), perc_gt_0])]
+    pairs_data1[,`:=`(paste0('Receptor_Cells_Exp_',cond_name2), all_dt2[pairs_data1, on = .(clust1=Receiver, gene=Receptor), perc_gt_0])]
     utils::setTxtProgressBar(pb, 11)
-    pairs_data[, `:=`(Receptor_Avg_Exp, all_dt[pairs_data, on = .(clust1=Receiver, gene=Receptor), avg_exp])]
+    pairs_data1[, `:=`(paste0('Receptor_Avg_Exp_',cond_name1), all_dt1[pairs_data1, on = .(clust1=Receiver, gene=Receptor), avg_exp])]
+    pairs_data1[, `:=`(paste0('Receptor_Avg_Exp_',cond_name2), all_dt2[pairs_data1, on = .(clust1=Receiver, gene=Receptor), avg_exp])]
     utils::setTxtProgressBar(pb, 12)
-    pairs_data[, `:=`(Receptor_Cluster_Marker, mapply(function(receiver, receptor) { receptor %in% markers[[receiver]] }, pairs_data$Receiver, pairs_data$Receptor))]
+    pairs_data1[, `:=`(Receptor_Cluster_Marker, mapply(function(receiver, receptor) { receptor %in% markers[[receiver]] }, pairs_data1$Receiver, pairs_data1$Receptor))]
     utils::setTxtProgressBar(pb, 13)
     close(pb)
     cat('Done.\n')
 
-    return(pairs_data)
+    return(pairs_data1)
 }
 
 
@@ -191,18 +233,17 @@ find_markers_btwn_cond_for_celltype = function(seurat_obj = NULL, prep_SCT = FAL
     if(prep_SCT==TRUE) {
         seurat_obj = PrepSCTFindMarkers(seurat_obj)
     }
-    seurat_obj = PrepSCTFindMarkers(seurat_obj)
 
     message("Subsetting and setting identities...")
-    cells.1 = rownames(seurat_obj@meta.data %>% dplyr::filter(!!sym(celltype_column) == celltype_name & sample == cond_name1))
-    cells.2 = rownames(seurat_obj@meta.data %>% dplyr::filter(!!sym(celltype_column) == celltype_name & sample == cond_name2))
+    cells.1 = rownames(seurat_obj@meta.data %>% dplyr::filter((!!sym(celltype_column) == celltype_name) & (!!sym(cond_column) == cond_name1)))
+    cells.2 = rownames(seurat_obj@meta.data %>% dplyr::filter((!!sym(celltype_column) == celltype_name) & (!!sym(cond_column) == cond_name2)))
 
     message("Running FindMarkers...")
     de_cells = FindMarkers(seurat_obj, ident.1=cells.1, ident.2=cells.2)
 
     message("Filtering DE genes by log2FC and adjusted p-value...")
     de_cond_celltype = de_cells %>%
-                       dplyr::filter((avg_log2FC >= FC_cutoff | avg_log2FC <= -FC_cutoff) & p_val_adj <= adj_p_val_cutoff)
+                       dplyr::filter((abs(avg_log2FC) >= FC_cutoff) & (p_val_adj <= adj_p_val_cutoff))
 
     message("Adding gene symbols...")
     ensembl_ids = rownames(de_cond_celltype)
@@ -221,15 +262,17 @@ find_markers_btwn_cond_for_celltype = function(seurat_obj = NULL, prep_SCT = FAL
 }
 
 
-##' Identify upregulated receptors
+##' Identify differentially expressed receptors
 #'
-#' This function identifies upregualted receptors from a given DE gene table using a chosen log2FC cutoff
+#' This function identifies differentially expressed receptors from a given DE gene table using a chosen log2FC cutoff
 #'
 #' @param de_condition_filtered: differentially expressed genes output from find_markers_btwn_cond_for_celltype function
-#' @param FC_cutoff: desired cutoff for log2FC values using >= the absolute value, default is 0.3
+#' @param FC_cutoff: desired cutoff for greater than or equal to log2FC values, default is 0.3
+#' @param direction: direction for the differential expression, options are 'up', 'down', or 'both'
+#' @param species: the species of oranism being studied, default is 'human'
 #' @return A dataframe with identified DE genes and their log2FC from previously chosen condition
 #' @export
-find_upreg_receptors = function(de_condition_filtered= NULL, FC_cutoff = 0.3, species = 'human') {
+find_de_receptors = function(de_condition_filtered= NULL, FC_cutoff = 0.3, direction = 'both', species = 'human') {
 
     message("Loading ligand-receptor information")
     # Load MultiNicheNet ligand receptor interactions
@@ -239,14 +282,25 @@ find_upreg_receptors = function(de_condition_filtered= NULL, FC_cutoff = 0.3, sp
     receptor_genes = unique(na.omit(receptor_ensembl))
     ensembl_to_symbol = setNames(receptor_symbol, receptor_ensembl)
 
-    message("Filter for upregulated receptors")
-    upreg_receptors = de_condition_filtered %>%
-                      dplyr::filter(ensembl_id %in% receptor_genes & avg_log2FC >= FC_cutoff)
-    upreg_receptors$gene_symbol = ensembl_to_symbol[upreg_receptors$ensembl_id]
+    message(paste0("Filter for ",direction," DE receptors"))
+    if(direction == 'up') {
+        de_receptors = de_condition_filtered %>%
+                          dplyr::filter((ensembl_id %in% receptor_genes) & (avg_log2FC >= FC_cutoff))
+    } else if(direction == 'down') {
+        de_receptors = de_condition_filtered %>%
+                          dplyr::filter((ensembl_id %in% receptor_genes) & (avg_log2FC <= -FC_cutoff))
+    } else if(direction == 'both') {
+        de_receptors = de_condition_filtered %>%
+                          dplyr::filter((ensembl_id %in% receptor_genes) & (abs(avg_log2FC) >= FC_cutoff))
+    }
+    de_receptors$gene_symbol = ensembl_to_symbol[de_receptors$ensembl_id]
+    de_receptors = de_receptors[, c("gene_symbol", setdiff(names(de_receptors), "gene_symbol"))]  
 
-    upreg_receptors = upreg_receptors[, c("gene_symbol", setdiff(names(upreg_receptors), "gene_symbol"))]  
-
-    return(upreg_receptors)
+    de_receptors[,'Feedback'] =
+        ifelse(de_receptors[,'avg_log2FC'] > 0, 'Amplification', 'Adaptation')
+    
+    #write.csv(de_receptors, "de_receptors.csv")
+    return(de_receptors)
 }
 
 
@@ -281,26 +335,22 @@ filter_lr_interactions = function(interactions = NULL, sender_celltypes = NULL, 
 }
 
 
-#######################################################################
-## Intersect Upregulated Receptors with Ligand-Receptor Interactions ##
-#######################################################################
-
-##' Intersect upregulated receptors with filtered ligand-receptor interactions
+##' Intersect DE receptors with filtered ligand-receptor interactions
 #'
 #' This function takes previously identified DE receptor genes from chosen condition and identifies overlapping interactions
 #'
-#' @param upreg_receptors: name for output file containing DE receptors
+#' @param de_receptors: name for output file containing DE receptors
 #' @param interactions: ligand-receptor interactions dataframe from map_interactions 
 #' @return A data frame of idendified DE receptor genes found in previously idendified interactions list
 #' @export
-intersect_upreg_receptors_with_lr_interactions = function(upreg_receptors = NULL, interactions = NULL) {
+intersect_de_receptors_with_lr_interactions = function(de_receptors = NULL, interactions = NULL) {
 
-    message("Intersect upregulated receptors with filtered interactions")
+    message("Intersect DE receptors with filtered interactions")
 
-    upreg_receptors_filtered_and_compared = upreg_receptors %>%
+    de_receptors_filtered_and_compared = de_receptors %>%
                                             dplyr::filter(gene_symbol %in% interactions$Receptor_Symbol)
 
-return(upreg_receptors_filtered_and_compared)
+return(de_receptors_filtered_and_compared)
 }
 
 
@@ -361,6 +411,8 @@ find_enriched_pathways = function(seurat_obj = NULL, de_condition_filtered = NUL
 
     # Rename the Genes so they are correct for mouse, and shouldn't hurt human
     enrichr_results = enrichment_results_combined %>% mutate(tmp = paste(convert_me[strsplit(Genes, ";")[[1]]], collapse=';'))
+
+    # Filter down to only the significantly enriched pathways
     enrichr_results = enrichr_results[enrichr_results$Adjusted.P.value < adj_p_val_cutoff, ]
 
     return(enrichr_results)
@@ -395,11 +447,12 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
   #####################
   ### Run pipeline  ###
   #####################
-  message("Running MapInteractions...")
-  LR_interactions = MapInteractions(seurat_obj, 
+  message("Running map_interactions...")
+  LR_interactions = map_interactions(seurat_obj, 
                                     group_by = celltype_column,
                                     cond_column = cond_column,
                                     cond_name1= cond_name1,
+                                    cond_name2= cond_name2,
                                     species=species)
 
   message("Finding DE genes...")
@@ -415,10 +468,10 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
       adj_p_val_cutoff = adj_p_val_cutoff,
       ensdb = ensdb)
 
-  message("Finding upregulated receptors...")
-  upreg_receptors = find_upreg_receptors(
+  message("Finding DE receptors...")
+  de_receptors = find_de_receptors(
       de_condition_filtered = de_cond_celltype,
-      FC_cutoff = FC_cutoff, species=species)
+      FC_cutoff = FC_cutoff, species = species, direction = 'both')
 
   message("Filtering LR interactions...")
   interactions_filtered = filter_lr_interactions(
@@ -428,9 +481,8 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
       secreted_lig = secreted_lig)
 
   message("Intersecting receptors with interactions...")
-  upreg_receptors_filtered_and_compared =
-        intersect_upreg_receptors_with_lr_interactions(
-      upreg_receptors = upreg_receptors,
+  de_receptors_filtered_and_compared = intersect_de_receptors_with_lr_interactions(
+      de_receptors = de_receptors,
       interactions = interactions_filtered)
 
   message("Running pathway enrichment...")
@@ -448,59 +500,61 @@ run_full_scSignalMap_pipeline = function(seurat_obj = NULL, prep_SCT = TRUE, con
   return(list(
       LR_interactions = LR_interactions,
       de_cond_celltype = de_cond_celltype,
-      upreg_receptors = upreg_receptors,
+      de_receptors = de_receptors,
       interactions_filtered = interactions_filtered,
-      upreg_receptors_filtered_and_compared = upreg_receptors_filtered_and_compared,
+      de_receptors_filtered_and_compared = de_receptors_filtered_and_compared,
       enrichr_results = enrichr_results))
 }
+
 
 ##' Create Master Interaction List
 #'
 #' This function creates master interaction list by combining DE ligands/receptors, Enrichr results, and scSignalMap interactions
 #'
 #' @param enrichr_results Data frame of Enrichr pathway enrichment results, default is results$enrichr_results 
-#' @param de_receptors Data frame of upregulated receptors, default is results$upreg_receptors_filtered_and_compared
+#' @param de_receptors Data frame of up- and down-regulated receptors, default is results$combined_receptors_filtered_and_compared
 #' @param scSignalMap_data_filtered Data frame of filtered interactions, default is results$interactions_filtered
 #' @return A data frame containing merged ligand/receptor info, enrichment, and interaction data
 #' @export
 create_master_interaction_list = function(
   enrichr_results = results$enrichr_results,
-  de_receptors = results$upreg_receptors_filtered_and_compared,
-  scSignalMap_data_filtered = results$interactions_filtered
-) {
-  
-  ## Step 1: Clean Enrichr results
-  enrichr_results = enrichr_results[, !(names(enrichr_results) %in% c("Old.P.value", "Old.Adjusted.P.value"))]
-  
-  # Break appart the genes
-  genes = sapply(enrichr_results$Genes, function(x) { strsplit(x,';')[[1]] })
-  names(genes) = enrichr_results$Term
+  de_receptors = results$de_receptors_filtered_and_compared,
+  scSignalMap_data_filtered = results$interactions_filtered) {
 
-  # Filtering down to terms
-  matched = list()
-  for(term1 in names(genes)) {
-      intersect1 = intersect(genes[[term1]],unique(de_receptors$gene_symbol))
-      if(length(intersect1)>0) {
-          matched[[term1]] = intersect1
-      }
-  }
-  
-  # Make the master list
-  master_list = vector("list", length = 0)
-  for (term1 in names(matched)) {
-    cur_term_df = enrichr_results %>%
-      dplyr::filter(Term == term1)
-    for (rec1 in matched[[term1]]) {
-      rec1_df = scSignalMap_data_filtered %>%
-        dplyr::filter(Receptor_Symbol == rec1)
-      if (nrow(rec1_df) > 0) {
-        combined_df = bind_cols(cur_term_df[rep(1, nrow(rec1_df)), ], rec1_df)
-        master_list[[length(master_list) + 1]] = combined_df
-      }
+    ## Step 1: Clean Enrichr results
+    enrichr_results = enrichr_results[, !(names(enrichr_results) %in% c("Old.P.value", "Old.Adjusted.P.value"))]
+
+    # Break appart the genes
+    genes = sapply(enrichr_results$Genes, function(x) { strsplit(x,';')[[1]] })
+    names(genes) = enrichr_results$Term
+
+    # Filtering down to terms
+    matched = list()
+    for(term1 in names(genes)) {
+        intersect1 = intersect(genes[[term1]],unique(de_receptors$gene_symbol))
+        if(length(intersect1)>0) {
+            matched[[term1]] = intersect1
+        }
     }
-  }
 
-  master_list = bind_rows(master_list)
-  
-  return(master_list)
+    # Make the master list
+    master_list = vector("list", length = 0)
+    for (term1 in names(matched)) {
+        cur_term_df = enrichr_results %>%
+          dplyr::filter(Term == term1)
+        for (rec1 in matched[[term1]]) {
+            rec1_df = scSignalMap_data_filtered %>%
+              dplyr::filter(Receptor_Symbol == rec1)
+            deg_res = de_receptors %>%
+              dplyr::filter(gene_symbol == rec1)
+            if (nrow(rec1_df) > 0) {
+                combined_df = bind_cols(cur_term_df[rep(1, nrow(rec1_df)), ], rec1_df, deg_res[,c('p_val','p_val_adj','avg_log2FC','Feedback','pct.1','pct.2')])
+                master_list[[length(master_list) + 1]] = combined_df
+            }
+        }
+    }
+
+    master_list = bind_rows(master_list)
+
+    return(master_list)
 }
