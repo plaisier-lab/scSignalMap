@@ -1,9 +1,9 @@
 title: scSignalMap
 description: scRNA-Seq Ligand–Receptor Signaling Analysis in R
-
-remote_theme: pages-themes/slate@v0.2.0
-plugins:
-- jekyll-remote-theme # add this line to the plugins list if you already have one
+theme: jekyll-theme-slate
+#remote_theme: pages-themes/slate@v0.2.0
+#plugins:
+#- jekyll-remote-theme # add this line to the plugins list if you already have one
 
 url: https://plaisier-lab.github.io
 baseurl: /scSignalMap
