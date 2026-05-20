@@ -1,10 +1,12 @@
-title: scSignalMap
-description: scRNA-Seq Ligand–Receptor Signaling Analysis in R
-theme: jekyll-theme-slate
-#remote_theme: pages-themes/slate@v0.2.0
-#plugins:
-#- jekyll-remote-theme # add this line to the plugins list if you already have one
+title: ccAFv2
+description: A starter template for a Jeykll site using the Just the Docs theme!
+remote_theme: just-the-docs/just-the-docs
 
-url: https://plaisier-lab.github.io
-baseurl: /scSignalMap
+url: https://just-the-docs.github.io
+aux_links:
+  Plaisier Lab: https://github.com/plaisier-lab
+
+just_the_docs:
+  custom_css:
+    - "docs/custom.css"
 
