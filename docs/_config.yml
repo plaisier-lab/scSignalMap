@@ -1,7 +1,7 @@
 title: scSignalMap
 description: scRNA-Seq Ligand–Receptor Signaling Analysis in R
 
-theme: just-the-docs
+theme: slate
 
 url: https://plaisier-lab.github.io
 baseurl: /scSignalMap
