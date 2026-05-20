@@ -6,10 +6,3 @@ theme: slate
 url: https://plaisier-lab.github.io
 baseurl: /scSignalMap
 
-color_scheme: dark
-
-search_enabled: true
-
-aux_links:
-  GitHub Repository:
-    - https://github.com/Plaisier-Lab/scSignalMap
