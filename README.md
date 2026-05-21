@@ -83,6 +83,7 @@ write.csv(master_interaction_list, "<file_name.csv>")
 ```
 ## Maintainers
 Jillian Woodley, developer since 2025, Christopher L. Plaisier, developer and maintainer since 2025
+
 For issues or comments, please contact: [Chris Plaiser](mailto:plaisier@asu.edu)
 
 For other great packages from the Plaisier Lab, please check here: [@plaisier_lab](https://github.com/plaisier_lab)
