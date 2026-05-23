@@ -26,7 +26,8 @@ remotes::install_github("plaisier-lab/scSignalMap/scSignalMap")
 
 ## Dockerfile and image
 
-For those who are interested we also provide a Dockerfile and image that include all depdencies:
+For those who are interested we also provide a Dockerfile and image that include all depdencies.
+Command to pull the image down:
 
 ```r
 docker pull cplaisier/quadculture
