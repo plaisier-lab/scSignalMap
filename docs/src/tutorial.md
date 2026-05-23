@@ -1,6 +1,6 @@
 ---
 layout: default
-title: scSignalMap Tutorial Using Glioblastoma (GBM) scRNA-Seq Datasets
+title: Tutorial Using Glioblastoma (GBM) scRNA-Seq Datasets
 nav_order: 6
 ---
 
