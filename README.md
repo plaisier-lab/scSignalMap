@@ -30,7 +30,7 @@ Installation of scSignalMap in R is accomplished by:
 remotes::install_github("plaisier-lab/scSignalMap/scSignalMap")
 ```
 ## Dockerfile and Image
-For those who are interested we also provide a Dockerfile and image that include all depdencies:
+For those who are interested we also provide a Dockerfile and image that include all dependencies:
 Command to pull the image down:
 
 ```r
