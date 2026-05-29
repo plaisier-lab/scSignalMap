@@ -234,7 +234,7 @@ DimPlot(MN_big_int, reduction = "umap", label = F, pt.size = 0.5)
 dev.off()
 
 #Save integrated object
-saveRDS(MN_big_int, file = "seurat_objects/MN_big_int.rds")
+saveRDS(MN_big_int, file = "seurat_objects/GB3_Integrated_Dataset.rds")
 
 
 
