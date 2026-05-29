@@ -5,7 +5,7 @@ nav_order: 1
 ---
 
 # scSignalMap: scRNA-Seq Ligand–Receptor Signaling Analysis in R
-
+![Banner]({{ site.baseurl }}/images/LR_Banner.png)
  > scSignalmap performs a **full ligand–receptor signaling analysis** for single-cell RNA sequencing data. Utilizing user-defined parameters, it performs a streamlined workflow including: 
 
  - Ligand–receptor interaction mapping
